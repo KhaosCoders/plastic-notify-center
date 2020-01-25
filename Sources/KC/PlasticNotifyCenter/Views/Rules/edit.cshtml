@@ -1,0 +1,266 @@
+@{
+    ViewData["Title"] = "Edit Rule";
+}
+@using PlasticNotifyCenter.Models
+@model EditRuleViewModel
+@section scripts {
+    <script src="~/js/jquery.quicksearch.js" asp-append-version="true"></script>
+    <script src="~/js/jquery.multi-select.js" asp-append-version="true"></script>
+    <script type="text/javascript">
+    <!--
+    (function($) {
+        $('#ruleNotifiers').multiSelect({
+            selectableHeader: "<p>Available</p>",
+            selectionHeader: "<p>Active</p>",
+            cssClass: "list-form-control"
+        });
+        $('#ruleRecipients').multiSelect({
+            selectableHeader: "<p>Available</p><div><input type='text' class='list-search-input' autocomplete='off' placeholder='Search...' novalidate></div>",
+            selectionHeader: "<p>Active</p><div><input type='text' class='list-search-input' autocomplete='off' placeholder='Search...' novalidate></div>",
+            cssClass: "list-form-control",
+            afterInit: function(ms){
+                var that = this,
+                    $selectableSearch = that.$selectableUl.prev().children('input'),
+                    $selectionSearch = that.$selectionUl.prev().children('input'),
+                    selectableSearchString = '#'+that.$container.attr('id')+' .ms-elem-selectable:not(.ms-selected)',
+                    selectionSearchString = '#'+that.$container.attr('id')+' .ms-elem-selection.ms-selected';
+                that.qs1 = $selectableSearch.quicksearch(selectableSearchString)
+                .on('keydown', function(e){
+                    if (e.which === 40){
+                        that.$selectableUl.focus();
+                        return false;
+                    }
+                });
+                that.qs2 = $selectionSearch.quicksearch(selectionSearchString)
+                .on('keydown', function(e){
+                    if (e.which == 40){
+                        that.$selectionUl.focus();
+                        return false;
+                    }
+                });
+            },
+            afterSelect: function(){
+                this.qs1.cache();
+                this.qs2.cache();
+            },
+            afterDeselect: function(){
+                this.qs1.cache();
+                this.qs2.cache();
+            }
+        });
+
+        function loadTriggerVars() {
+            var ruleFilterVars = $("#ruleFilterVars");
+            var type = $("#ruleTrigger").val();
+            if (!type) { return; }
+            ruleFilterVars.html("Loading (" + type + ")...");
+            $.ajax("/Trigger/Vars/" + type)
+                .done(function(data) {
+                    if (data.state === 0) {
+                        ruleFilterVars.html("");
+                        var table = $("<table>")
+                                    .addClass("table")
+                                    .addClass("table-hover")
+                                    .addClass("table-sm");
+                        var thead = $("<thead>");
+                        thead.html('<tr><th scope="col">Variable</th><th scope="col">Last Value</th></tr>');
+                        var tbody = $("<tbody>");
+                        table.append(thead).append(tbody);
+                        ruleFilterVars.append(table);
+                        for(key in data.values) {
+                            var tr = $("<tr>");
+                            tr.append($("<td>").html(key));
+                            tr.append($("<td>").append($('<pre class="m-0">').html(data.values[key])));
+                            tbody.append(tr);
+                        }
+                    } else {
+                        ruleFilterVars.html("- loading vars failed!");
+                    }
+                })
+                .fail(function() {
+                    ruleFilterVars.html("- loading vars failed!");
+                });
+        }
+
+        $("#ruleTrigger").change(function() {
+            loadTriggerVars();
+        });
+
+        loadTriggerVars();
+    })($);
+    -->
+    </script>
+}
+@section links {
+    <link rel="stylesheet" href="~/css/multi-select.dist.css" />
+}
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-3">
+            Edit Rule: @Model.Rule.DisplayName
+        </h1>
+    </div>
+    <hr class="my-4">
+    <div class="row">
+        <form id="formRule" class="needs-validation w-100" asp-area="" asp-controller="Rules" asp-action="Save" method="post" novalidate>
+            <div class="form-group text-left row">
+                <label for="ruleName" class="col-sm-2 col-form-label">Name</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="ruleName" name="name" aria-describedby="ruleNameHelp"
+                        placeholder="Enter a name for this rule" required value="@Model.Rule.DisplayName">
+                    <small id="ruleNameHelp" class="form-text text-muted">The name should tell others what this rule does.</small>
+                    <div id="ruleNameValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label class="col-sm-2 col-form-label font-weight-bold">PlasticSCM Trigger</label>
+            </div>
+            <div class="form-group text-left row">
+                <label for="ruleTrigger" class="col-sm-2 col-form-label">Trigger</label>
+                <div class="col-sm-10">
+                    <select class="form-control" id="ruleTrigger" name="trigger" aria-describedby="ruleTriggerHelp" required>
+                        @foreach(string trigger in Model.KnownTriggers)
+                        {
+                            if (Model.Rule.Trigger == trigger)
+                            {
+                                <option value="@trigger" selected>
+                                    @trigger
+                                </option>
+                            }
+                            else
+                            {
+                                 <option value="@trigger">
+                                    @trigger
+                                </option>
+                            }
+                        }
+                    </select>
+                    <small id="ruleTriggerHelp" class="form-text text-muted">The PlasticSCM trigger, that triggers this rule.</small>
+                    <div id="ruleTriggerValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label for="ruleFilter" class="col-sm-2 col-form-label">Condition</label>
+                <div class="col-sm-10">
+                    <textarea class="form-control" id="ruleFilter" name="filter" aria-describedby="ruleFilterHelp">@Model.Rule.AdvancedFilter</textarea>
+                    <small id="ruleFilterHelp" class="form-text text-muted">
+                        You can build simple expressions with these variables supplied by the trigger:<br/>
+                        <span id="ruleFilterVars">Loading...</span>
+                        Example: <pre>EnvVars["PLASTIC_REPOSITORY_NAME"] == "Repo1" || Input.Any(line => line.Contains("SomeFile.ext"))</pre>
+                    </small>
+                    <div id="ruleFilterValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label class="col-sm-2 col-form-label font-weight-bold">Notification</label>
+            </div>
+            <div class="form-group text-left row">
+                <label for="ruleTitle" class="col-sm-2 col-form-label">Title</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="ruleTitle" name="title" aria-describedby="ruleTitleHelp"
+                        placeholder="Title or subject of the message" value="@Model.Rule.NotificationTitle">
+                    <small id="ruleTitleHelp" class="form-text text-muted">
+                        Some notifier types may use a title or subject.<br/>
+                        You can use also the Variables from above (except Input):<br/>
+                        Example: <pre>New Repository: %PLASTIC_REPOSITORY_NAME%</pre>
+                    </small>
+                    <div id="ruleTitleValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label for="ruleMessage" class="col-sm-2 col-form-label">Message</label>
+                <div class="col-sm-10">
+                    <textarea class="form-control" id="ruleMessage" name="message" aria-describedby="ruleMessageHelp" rows="6" required>@Model.Rule.NotificationBody</textarea>
+                    <small id="ruleMessageHelp" class="form-text text-muted">
+                        You may use all the variables supplied by the trigger. Just like in the title above.
+                    </small>
+                    <div id="ruleMessageValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label for="ruleTags" class="col-sm-2 col-form-label">Tags</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="ruleTags" name="tags" aria-describedby="ruleTagsHelp"
+                        placeholder="Tags for the message" value="@Model.Rule.NotificationTags">
+                    <small id="ruleTagsHelp" class="form-text text-muted">
+                        Some notifier types may use tags. Supply a list of tags separated by commas.
+                    </small>
+                    <div id="ruleTagsValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label class="col-sm-2 col-form-labeld">Notifiers</label>
+                <div class="col-sm-10">
+                    <select multiple="multiple" class="form-control" id="ruleNotifiers" name="notifiers">
+                        @foreach(var notifier in Model.Rule.Notifiers)
+                        {
+                        <option value="@notifier.Id" selected>@notifier.DisplayName</option>
+                        }
+                        @foreach(var notifier in Model.UnusedNotifiers)
+                        {
+                        <option value="@notifier.Id">@notifier.DisplayName</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label class="col-sm-2 col-form-label">Recipients</label>
+                <div class="col-sm-10">
+                    <select multiple="multiple" class="form-control" id="ruleRecipients" name="recipients">
+                    @foreach(var recipient in Model.Rule.Recipients)
+                    {
+                        @if (recipient.User != null)
+                        {
+                        <option value="@("U_"+recipient.User.Id)" selected>&#xf007; @recipient.User.UserName</option>
+                        }
+                        else
+                        {
+                        <option value="@("G_"+recipient.Role.Id)" selected>&#xf0c0; @recipient.Role.Name</option>
+                        }
+                    }
+                    @foreach(var role in Model.OtherRoles)
+                    {
+                        <option value="@("G_"+role.Id)">&#xf0c0; @role.Name</option>
+                    }
+                    @foreach(var user in Model.OtherUsers)
+                    {
+                        <option value="@("U_"+user.Id)">&#xf007; @user.UserName</option>
+                    }
+                    </select>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <div class="col-sm-12 text-center">
+                    <input type="hidden" name="id" value="@Model.Rule.Id">
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+<!--
+(function($) {
+    $('#saveBtn').click(function(event){
+        var form = $('#formRule');
+
+        // reset old errors
+        $(".form-control").each(function() {
+            this.setCustomValidity("");
+        });
+        // validate form
+        if (form[0].checkValidity() === true) {
+            // submit form
+            form.submit();
+        }
+        form.addClass("was-validated");
+
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    });
+})($);
+-->
+</script>

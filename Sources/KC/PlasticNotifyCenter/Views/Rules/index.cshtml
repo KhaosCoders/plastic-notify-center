@@ -1,0 +1,105 @@
+@{
+    ViewData["Title"] = "Rules";
+}
+@using PlasticNotifyCenter.Models
+@using PlasticNotifyCenter.Services
+@model RulesViewModel
+@inject INotifierDefinitionService notifierDefinitions
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            Rules
+        </h1>
+    </div>
+    <hr class="my-4">
+    <p>
+        <form asp-area="" asp-controller="Rules" asp-action="New" method="get">
+            <button type="submit" class="btn btn-primary">Add rule</button>
+        </form>
+    </p>
+    @if(Model.Rules.Length == 0)
+    {
+        <div class="alert alert-info" role="alert">
+            Create your first rule
+        </div>
+    }
+    else
+    {
+    <table class="table table-hover table-sm">
+        <thead class="thead-light">
+            <th scope="col">Rule</th>
+            <th scope="col">Trigger</th>
+            <th scope="col">Creator</th>
+            <th scope="col">Notifiers</th>
+            <th scope="col">Active</th>
+            <th scope="col">Actions</th>
+        </thead>
+        <tbody>
+            @foreach(var rule in Model.Rules)
+            {
+            <tr>
+                <td>@rule.DisplayName</td>
+                <td>@rule.Trigger</td>
+                <td>@(rule.Owner?.NormalizedUserName ?? "unkown")</td>
+                <td>
+                    @foreach(var notifier in rule.Notifiers)
+                    {
+                        <span data-toggle="tooltip" title="@notifier.DisplayName">
+                            @Html.Raw(notifierDefinitions.GetIcon(notifier.GetType()))
+                        </span>
+                    }
+                </td>
+                <td>
+                @if(rule.IsActive)
+                {
+                    <span class="badge badge-success">Yes</span>
+                }
+                else
+                {
+                    <span class="badge badge-danger">No</span>
+                }
+                </td>
+                <td>
+                    <a class="btn btn-primary" asp-area="" asp-controller="Rules" asp-action="Edit" asp-route-id="@rule.Id">Edit</a>
+                    <a class="btn btn-danger" href="#" onclick="$('#deleteRuleId').val('@rule.Id')" data-toggle="modal" data-target="#deleteRuleModal">Delete</a>
+                    @if(rule.IsActive)
+                    {
+                        <a class="btn btn-dark" asp-area="" asp-controller="Rules" asp-action="Deactivate" asp-route-id="@rule.Id">Deactivate</a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-success" asp-area="" asp-controller="Rules" asp-action="Activate" asp-route-id="@rule.Id">Activate</a>
+                    }
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+    }
+</div>
+
+<div class="modal fade" id="deleteRuleModal" tabindex="-1" role="dialog" aria-labelledby="deleteRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteRuleModalLabel">Delete rule</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>
+                    Do you really want to delete this rule?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <form asp-area="" asp-controller="Rules" asp-action="Delete" method="post">
+                    <input type="hidden" name="id" id="deleteRuleId">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

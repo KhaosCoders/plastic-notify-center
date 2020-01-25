@@ -1,0 +1,34 @@
+@{
+    ViewData["Title"] = "LDAP";
+}
+@using PlasticNotifyCenter.Data
+@model AppSettings
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            LDAP
+        </h1>
+    </div>
+    <hr class="my-4">
+    <ul class="nav nav-tabs">
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Index">General</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Groups">Groups</a>
+        </li>
+        <li class="nav-link active">
+            <a asp-area="" asp-controller="Admin" asp-action="LDAP">LDAP</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
+        </li>
+    </ul>
+    <p>
+        Not done jet...
+    </p>
+</div>

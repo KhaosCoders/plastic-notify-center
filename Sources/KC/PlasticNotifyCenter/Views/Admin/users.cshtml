@@ -1,0 +1,84 @@
+@{
+    ViewData["Title"] = "Users";
+}
+@using PlasticNotifyCenter.Models
+@model UsersViewModel
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            Users
+        </h1>
+    </div>
+    <hr class="my-4">
+    <ul class="nav nav-tabs">
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Index">General</a>
+        </li>
+        <li class="nav-link active">
+            <a asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Groups">Groups</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="LDAP">LDAP</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
+        </li>
+    </ul>
+    <p>
+        <form asp-area="" asp-controller="Admin" asp-action="AddUser" method="get">
+            <button type="submit" class="btn btn-primary">Add user</button>
+        </form>
+    </p>
+    <table class="table table-hover table-sm">
+        <thead class="thead-light">
+            <th scope="col">Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Repository</th>
+            <th scope="col">Actions</th>
+        </thead>
+        @foreach(var user in Model.Users)
+        {
+        <tr>
+            <td>@user.UserName</td>
+            <td>@user.Email</td>
+            <td>@user.Origin</td>
+            <td>
+                <a class="btn btn-primary" asp-area="" asp-controller="Admin" asp-action="User"  asp-route-id="@user.Id">Edit</a>
+            @if (user.Origin == PlasticNotifyCenter.Data.Identity.Origins.Local)
+            {
+                <a class="btn btn-danger" href="#" onclick="$('#deleteUserId').val('@user.Id')" data-toggle="modal" data-target="#deleteUserModal">Delete</a>
+            }
+            </td>
+        </tr>
+        }
+    </table>
+</div>
+
+<div class="modal fade" id="deleteUserModal" tabindex="-1" role="dialog" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteUserModalLabel">Delete user</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>
+                    Do you really want to delete this user?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <form asp-area="" asp-controller="Admin" asp-action="DelUser" method="post">
+                    <input type="hidden" name="id" id="deleteUserId">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

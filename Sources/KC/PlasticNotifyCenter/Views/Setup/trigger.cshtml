@@ -1,0 +1,51 @@
+<p class="text-left">
+    <strong>Service-Side Triggers</strong>
+</p>
+<p>
+    <pre><code class="bash hljs text-left" id="tigger-cmd">
+cm trigger create after-add PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-add"
+cm trigger create after-checkin PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-checkin"
+cm trigger create after-mkrep PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-mkrep"
+cm trigger create after-rmrep PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-rmrep"
+cm trigger create after-mkbranch PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-mkbranch"
+cm trigger create after-rmbranch PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-rmbranch"
+cm trigger create after-rmchangeset PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-rmchangeset"
+cm trigger create after-mklabel PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-mklabel"
+cm trigger create after-rmlabel PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-rmlabel"
+cm trigger create after-mkatt PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-mkatt"
+cm trigger create after-rmattribute PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-rmattribute"
+cm trigger create after-chattvalue PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-chattvalue"
+cm trigger create after-mkreview PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-mkreview"
+cm trigger create after-editreview PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-editreview"
+cm trigger create after-replicationread PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-replicationread"
+cm trigger create after-replicationwrite PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-replicationwrite"
+cm trigger create after-security PlasticNotifyCenter "webtrigger [baseurl]/Trigger/Fire/after-security"
+    </code></pre>
+</p>
+<p class="text-left">
+    <ul class="text-left">
+        <li>Make sure you use the latest version of Plastic SCM server as some triggers are new!</li>
+        <li>Use only <strong>after-*</strong> event triggers. before-* triggers might cause problems in Plastic SCM.</li>
+        <li>You can find more on triggers in the official Plastic SCM documentation <a href="https://www.plasticscm.com/documentation/triggers/plastic-scm-version-control-triggers-guide#Chapter4:Triggerreference" target="_blank">here</a></li>
+    </ul>
+</p>
+<p  class="text-left">
+    <strong>Client-Side Triggers</strong>
+</p>
+<p  class="text-left">
+    You can also use the client-side triggers, but it's not recommented, as the clients need to be connected to the notification server at all times then.
+</p>
+<p>
+    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#testTriggerModal">Test triggers</button><br />
+    You can test if the triggers are correctly setup here.<br />
+</p>
+<script type="text/javascript">
+<!--
+function replaceBaseUrl() {
+    var triggerCode = $("#tigger-cmd");
+    triggerCode.text(
+        triggerCode.text().replace(/\[baseurl\]/g, $("#baseUrl").val())
+    );
+}
+-->
+</script>

@@ -1,0 +1,52 @@
+@{
+    ViewData["Title"] = "Triggers";
+}
+@using PlasticNotifyCenter.Data
+@model AppSettings
+
+@section modals {
+    <partial name="../Setup/triggerModal" />
+}
+@section scripts {
+    <script type="text/javascript">
+    <!--
+    replaceBaseUrl();
+    -->
+    </script>
+}
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            Triggers
+        </h1>
+    </div>
+    <hr class="my-4">
+    <ul class="nav nav-tabs">
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Index">General</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Groups">Groups</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="LDAP">LDAP</a>
+        </li>
+        <li class="nav-link active">
+            <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
+        </li>
+    </ul>
+    <input type="hidden" id="baseUrl" value="@Model.BaseUrl" />
+    <div class="row">
+        <div class="col12">
+            <p>
+                <br/>
+                These are the commands to setup all triggers. Please run them only once per Plastic SCM server.
+            </p>
+            <partial name="../Setup/trigger" />
+        </div>
+    </div>
+</div>

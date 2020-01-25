@@ -1,0 +1,167 @@
+@using PlasticNotifyCenter.Data
+@model SmtpNotifierData
+
+<h2>@(Model?.Id == null ? "#3 &mdash; STMP Setup" : "SMTP Notifier")</h2>
+<form id="formSmtp" class="needs-validation">
+    <div class="form-group text-left">
+        <label for="smtpName">Notifier Name</label>
+        <input type="text" class="form-control" id="smtpName" aria-describedby="smtpNameHelp"
+               placeholder="Enter a name for this notifier" required value="@(Model?.DisplayName ?? "SMPT Notifier #1")">
+        <small id="smtpNameHelp" class="form-text text-muted">The name should be unique and tell others what this notfier does.</small>
+        <div id="smtpNameValidator" style="display: none;"></div>
+    </div>
+    <div class="form-row">
+        <div class="form-group text-left col-md-8">
+            <label for="smtpHost">SMTP Host</label>
+            <input type="text" class="form-control" id="smtpHost" aria-describedby="smtpHostHelp"
+                placeholder="Enter the hostname of your mail server" required value="@(Model?.Host ??"")">
+            <small id="smtpHostHelp" class="form-text text-muted">Most mail servers offer sending mails via SMTP.</small>
+            <div id="smtpHostValidator" style="display: none;"></div>
+        </div>
+        <div class="form-group text-left col-md-4">
+            <label for="smtpPort">SMTP Port</label>
+            <input type="text" class="form-control" id="smtpPort" aria-describedby="smtpPortHelp"
+                placeholder="Enter the SMTP post of your mail server" value="465" required value="@(Model?.Port.ToString() ?? "")">
+            <small id="smtpPortHelp" class="form-text text-muted">SMTP default ports are <i>25</i> (Non-SSL) and <i>465</i> (SSL).</small>
+            <div id="smtpPortValidator" style="display: none;"></div>
+        </div>
+    </div>
+    <div class="form-group text-left">
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="smtpSSL" aria-describedby="smtpSSLHelp" @((Model?.EnableSSL ?? true) ? "checked" : "")>
+            <label class="form-check-label" for="smtpSSL">Use SSL</label>
+        </div>
+        <small id="smtpSSLHelp" class="form-text text-muted">You should use SSL encryption whenever possible.</small>
+        <div id="smtpSSLValidator" style="display: none;"></div>
+    </div>
+    <h3>Sender</h3>
+    <div class="form-row">
+        <div class="form-group text-left col-md-6">
+            <label for="smtpFromMail">Mail-Address</label>
+            <input type="email" class="form-control" id="smtpFromMail" aria-describedby="smtpFromMailHelp"
+                placeholder="Enter the email-address PNC should use to send mails" required value="@(Model?.SenderMail ?? "")">
+            <small id="smtpFromMailHelp" class="form-text text-muted">Maybe you can setup a mail account line: plasticnotify@YourOrganization.com.</small>
+            <div id="smtpFromMailValidator" style="display: none;"></div>
+        </div>
+        <div class="form-group text-left col-md-6">
+            <label for="smtpFromName">Alias</label>
+            <input type="text" class="form-control" id="smtpFromName" aria-describedby="smtpFromNameHelp"
+                placeholder="Enter the sender name" required value="@(Model?.SenderAlias ?? "PlasticNotifyCenter")">
+            <small id="smtpFromNameHelp" class="form-text text-muted">This name will be displayed by the receiving mail clients.</small>
+            <div id="smtpFromNameValidator" style="display: none;"></div>
+        </div>
+    </div>
+    <h3>Authentication</h3>
+    <div class="form-row">
+        <div class="form-group text-left col-md-6">
+            <label for="smtpUser">Username</label>
+            <input type="text" class="form-control" id="smtpUser" aria-describedby="smtpUserHelp"
+                placeholder="Enter the username" value="@(Model?.Username ?? "")">
+            <small id="smtpUserHelp" class="form-text text-muted">If your SMTP mail server needs authentication to send mails, enter the username here.</small>
+            <div id="smtpUserValidator" style="display: none;"></div>
+        </div>
+        <div class="form-group text-left col-md-6">
+            <label for="smtpPassword">Password</label>
+            <input type="password" class="form-control" id="smtpPassword" aria-describedby="smtpPasswordHelp"
+                placeholder="Enter the password" value="@(string.IsNullOrWhiteSpace(Model?.Password) ? "" : "****")">
+            <small id="smtpPasswordHelp" class="form-text text-muted">This is the password used to authenticate with the SMTP mail server.</small>
+            <div id="smtpPasswordValidator" style="display: none;"></div>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col-md-4">
+            <button type="button" class="btn btn-secondary" data-toggle="modal" data-target="#testSmtpModal">Test SMTP configuration</button>
+        </div>
+        <div class="col-md-4 text-center">
+            <button type="submit" class="btn btn-primary">
+                @(Model?.Id == null ? "Next" : "Save")
+            </button>
+        </div>
+        <div class="col-md-4 text-right">
+        @if(Model?.Id != null)
+        {
+            <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteSmtpModal">Delete</button>
+        }
+        </div>
+    </div>
+</form>
+
+<script>
+(function($) {
+    $("#smtpSSL").change(function() {
+        $("#smtpPort").val(this.checked ? 465 : 25);
+    });
+})($);
+</script>
+
+@if(Model?.Id != null)
+{
+<script type="text/javascript">
+<!--
+(function($) {
+    $(".needs-validation").each(function(index) {
+        var form = $(this);
+        form.submit(function(event) {
+            // reset old errors
+            $(".form-control").each(function() {
+                this.setCustomValidity("");
+            });
+            // validate form
+            if (form[0].checkValidity() === true) {
+                // submit form
+                var smtpPasswordValidator = $("#smtpPasswordValidator")
+                saveSmtpNotifier()
+                    .done(function(data) {
+                        if (data.state === 0) {
+                            window.location = window.location;
+                        } else {
+                            indicateError();
+                            smtpPasswordValidator
+                                .html(data.message)
+                                .removeClass("valid-feedback")
+                                .addClass("invalid-feedback")
+                                .show();
+                        }
+                    })
+                    .fail(function() {
+                        indicateError();
+                        smtpPasswordValidator
+                            .html("API call failed! Please check your input and try again.")
+                            .removeClass("valid-feedback")
+                            .addClass("invalid-feedback")
+                            .show();
+                    });
+            }
+            form.addClass("was-validated");
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        });
+    });
+
+    function saveSmtpNotifier() {
+        return $.ajax({
+                type: "POST",
+                url: "/Notifier/Save/@Model.Id",
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    Name: $("#smtpName").val(),
+                    Host: $("#smtpHost").val(),
+                    EnableSSL: $("#smtpSSL").val() === "on",
+                    Port: parseInt($("#smtpPort").val()),
+                    SenderMail: $("#smtpFromMail").val(),
+                    SenderAlias: $("#smtpFromName").val(),
+                    Username: $("#smtpUser").val(),
+                    Password: $("#smtpPassword").val()
+                }),
+                dataType: 'json'
+            });
+    }
+
+    function indicateError() {
+        $(".form-control").each(function(){ this.setCustomValidity("API error"); })
+    }
+})($);
+-->
+</script>
+}

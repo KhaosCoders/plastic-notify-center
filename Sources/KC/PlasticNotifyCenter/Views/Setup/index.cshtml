@@ -1,0 +1,104 @@
+﻿@using PlasticNotifyCenter.Data
+@model SetupViewModel
+@{
+    ViewData["Title"] = "Setup Page";
+}
+@section scripts {
+    <script src="~/js/setup.js" asp-append-version="true"></script>
+}
+@section modals {
+    @Html.DisplayFor(Model => Model.SmtpNotifier, "SmtpNotifierDataModal")
+    <partial name="../Setup/triggerModal" />
+}
+
+<div class="text-center">
+    <div class="jumbotron" id="setupIntro">
+        <h1 class="display-4">Welcome to PlasticNotifyCenter</h1>
+        <p class="lead"><b>Thank you</b> for using PlasticNotifyCenter =)</p>
+        <hr class="my-4">
+        <h2>Here is how it works</h2>
+        <img src="~/svg/how-it-works.svg" width="400" />
+        <hr class="my-4">
+        <p>Please follow these simple steps to set it up.</p>
+         <button type="submit" class="btn btn-primary" id="startSetupBtn">Start</button>
+    </div>
+
+    <div id="setup1" class="card" style="display: none;">
+        <div class="card-body">
+            <h2>#1 &mdash; PNC Address</h2>
+            <form id="formUrl" class="needs-validation">
+                <div class="form-group text-left">
+                    <label for="baseUrl">Base URL</label>
+                    <input type="text" class="form-control" id="baseUrl" aria-describedby="baseUrlHelp" placeholder="Enter the base url" required>
+                    <small id="baseUrlHelp" class="form-text text-muted">The base URL is the URL you use to access this service. <b>It has to be accessable from the Plastic SCM Server as well.</b></small>
+                    <div id="baseUrlValidator" style="display: none;"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Next</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="setup2" class="card" style="display: none;">
+        <div class="card-body">
+            <h2>#2 &mdash; Install Triggers</h2>
+            <p>
+                Please run the following commands on the machine running your Plastic SCM Server.
+            </p>
+            <partial name="trigger" />
+            <form id="formTriggers" class="needs-validation">
+                <button type="submit" class="btn btn-primary">Next</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="setup3" class="card" style="display: none;">
+        <div class="card-body">
+            @Html.DisplayFor(Model => Model.SmtpNotifier, "SmtpNotifierDataForm")
+        </div>
+    </div>
+
+    <div id="setup4" class="card" style="display: none;">
+        <div class="card-body">
+            <h2>#4 &mdash; Admin User</h2>
+            <form id="formAdminUser" class="needs-validation">
+                <div class="form-group text-left">
+                    <label for="adminUser">Admin User</label>
+                    <input type="text" class="form-control" id="adminUser" aria-describedby="adminUserHelp" placeholder="Enter a username for the admin user" required>
+                    <small id="adminUserHelp" class="form-text text-muted">Use this username to login as administrator.</small>
+                    <div id="adminUserValidator" style="display: none;"></div>
+                </div>
+                <div class="form-group text-left">
+                    <label for="adminEmail">Admin Email</label>
+                    <input type="email" class="form-control" id="adminEmail" aria-describedby="adminEmailHelp" placeholder="Enter a email address for the admin user" required>
+                    <small id="adminEmailHelp" class="form-text text-muted">This mail will be used for system level event reporting.</small>
+                    <div id="adminEmailValidator" style="display: none;"></div>
+                </div>
+                <div class="form-group text-left">
+                    <label for="adminPw">Admin Password</label>
+                    <input type="password" class="form-control" id="adminPw" aria-describedby="adminPwHelp" placeholder="Enter a password for the admin user" required>
+                    <small id="adminPwHelp" class="form-text text-muted">Please use a secure password and store it somewhere safe.</small>
+                    <div id="adminPwValidator" style="display: none;"></div>
+                </div>
+                <div class="form-group text-left">
+                    <label for="adminPw2">Re-enter Password</label>
+                    <input type="password" class="form-control" id="adminPw2" aria-describedby="adminPw2Help" placeholder="Re-enter the admin password" required>
+                    <small id="adminPw2Help" class="form-text text-muted">Please re-enter the same password.</small>
+                    <div id="adminPw2Validator" style="display: none;"></div>
+                </div>
+                <button type="submit" class="btn btn-primary">Finish</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="jumbotron" id="setup5" style="display: none;">
+        <h1 class="display-4">Setup finished</h1>
+        <p class="lead">All clear and ready to start.</p>
+        <hr class="my-4">
+        <p>Now login and setup notifications.</p>
+        <a href="/" class="btn btn-primary">Login</a>
+    </div>
+
+    <div class="progress">
+        <div class="progress-bar" id="progressbar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+</div>

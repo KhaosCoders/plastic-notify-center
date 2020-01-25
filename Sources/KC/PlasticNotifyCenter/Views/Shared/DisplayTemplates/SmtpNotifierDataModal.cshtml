@@ -1,0 +1,58 @@
+@using PlasticNotifyCenter.Data
+@model SmtpNotifierData
+
+<div class="modal fade" id="testSmtpModal" tabindex="-1" role="dialog" aria-labelledby="testSmtpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testSmtpModalLabel">Test SMTP configuration</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <form novalidate id="smtpTestForm">
+                    <div class="form-group text-left">
+                        <label for="testMailAddress">Send mail to</label>
+                        <input type="email" class="form-control" id="testMailAddress" aria-describedby="testMailAddressHelp" placeholder="Enter your mail address" required>
+                        <small id="testMailAddressHelp" class="form-text text-muted">
+                            Enter your mail address to test if PNC can send you an email. <br />
+                            <b>Please also check your spam folder if the mail is not arriving in your inbox</b>
+                        </small>
+                        <div id="testMailAddressValidator" style="display: none;"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Send test mail</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteSmtpModal" tabindex="-1" role="dialog" aria-labelledby="deleteSmtpModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSmtpModalLabel">Delete SMTP configuration</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>
+                    Do you really want to delete this SMTP Notifier?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <form asp-area="" asp-controller="Notifier" asp-action="Delete" asp-route-id="@(Model?.Id ?? "")" method="get">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/smtpTest.js" asp-append-version="true"></script>

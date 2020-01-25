@@ -1,0 +1,68 @@
+<div class="modal fade" id="testTriggerModal" tabindex="-1" role="dialog" aria-labelledby="testTriggerModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testTriggerModalLabel">Test Triggers</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Do one or all of the following actions in Plastic SCM to see if the triggers are correctly set up</p>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-add" trigger-count="?"></i> Add a new file to source control</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-checkin" trigger-count="?"></i> Check-in something</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-mkrep" trigger-count="?"></i> Create a new repository</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-rmrep" trigger-count="?"></i> Remove a repository</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-mkbranch" trigger-count="?"></i> Create a new branch</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-rmbranch" trigger-count="?"></i> Delete a branch</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-rmchangeset" trigger-count="?"></i> Delete a changeset</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-mklabel" trigger-count="?"></i> Create a new label</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-rmlabel" trigger-count="?"></i> Delete a label</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-mkatt" trigger-count="?"></i> Create a new attribute</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-rmattribute" trigger-count="?"></i> Delete an attribute</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-chattvalue" trigger-count="?"></i> Change an attributes value</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-mkreview" trigger-count="?"></i> Create a new code review</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-editreview" trigger-count="?"></i> Edit a code review</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-replicationread" trigger-count="?"></i> Perform replication (read)</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-replicationwrite" trigger-count="?"></i> Perform replication (write)</div>
+                <div><i class="fas fa-question-circle trigger-test" trigger="after-security" trigger-count="?"></i> Cause a security exception (denied operation)</div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+<!--
+function refreshTriggerTest() {
+    $.ajax({ dataType: "json", url: "/Setup/TriggerCounts" })
+        .done(function(data) {
+            $(".trigger-test");
+            data.forEach(function(trigger) {
+                var icon = $(".trigger-test[trigger='" + trigger.Trigger + "']");
+                var count = icon.attr("trigger-count");
+                if (count !== "?" && count != trigger.Count) {
+                    icon.removeClass("fa-question-circle");
+                    icon.addClass("fa-check-circle");
+                }
+                icon.attr("trigger-count", trigger.Count);
+            });
+            $(".trigger-test[trigger-count='?']").attr("trigger-count", 0);
+        })
+        .fail(function() {
+            console.log("Error while reading trigger call stats!");
+        });
+}
+
+var testTriggerIntervalHandle;
+$("#testTriggerModal").on("shown.bs.modal", function() {
+    refreshTriggerTest();
+    testTriggerIntervalHandle = window.setInterval(refreshTriggerTest, 1000);
+});
+
+$("#testTriggerModal").on("hidden.bs.modal", function() {
+    window.clearInterval(testTriggerIntervalHandle);
+});
+-->
+</script>

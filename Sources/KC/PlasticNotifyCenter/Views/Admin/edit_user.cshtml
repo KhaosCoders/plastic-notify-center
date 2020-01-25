@@ -1,0 +1,123 @@
+@{
+    ViewData["Title"] = "Edit User";
+}
+@using PlasticNotifyCenter.Models
+@model EditUserViewModel
+
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-3">
+            @(Model.IsNewUser ? "New User" : "Edit User: "+Model.User.NormalizedUserName)
+        </h1>
+    </div>
+    <hr class="my-4">
+    <div class="row">
+        <form id="formUser" class="needs-validation w-100" asp-area="" asp-controller="Admin" asp-action="User" asp-route-id="@(Model.IsNewUser ? "" : Model.User.Id)" method="post" novalidate>
+            <div class="form-group text-left row">
+                <label for="userName" class="col-sm-2 col-form-label">Name</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="userName" name="name" aria-describedby="userNameHelp"
+                        placeholder="Enter a name for this user" required value="@Model.User.UserName">
+                    <small id="userNameHelp" class="form-text text-muted">The name of the user.</small>
+                    <div id="userNameValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label for="userEmail" class="col-sm-2 col-form-label">Email</label>
+                <div class="col-sm-10">
+                    <input type="email" class="form-control" id="userEmail" name="email" aria-describedby="userEmailHelp"
+                        placeholder="Enter an email address for this user" required value="@Model.User.Email">
+                    <small id="userEmailHelp" class="form-text text-muted">The email address of the user.</small>
+                    <div id="userEmailValidator" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="form-group text-left row">
+                <label for="userPassword" class="col-sm-2 col-form-label">Password</label>
+                <div class="col-sm-10">
+                    <input type="password" class="form-control" id="userPassword" name="password" aria-describedby="userPasswordHelp"
+                        placeholder="Enter a password for this user" @(Model.IsNewUser ? "required" : "")>
+                    <small id="userPasswordHelp" class="form-text text-muted">The password of the user.</small>
+                    <div id="userPasswordValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label for="userPassword2" class="col-sm-2 col-form-label">Confirm password</label>
+                <div class="col-sm-10">
+                    <input type="password" class="form-control" id="userPassword2" aria-describedby="userPassword2Help"
+                        placeholder="Confirm the password above" @(Model.IsNewUser ? "required" : "")>
+                    <small id="userPassword2Help" class="form-text text-muted">both password have to match exactly.</small>
+                    <div id="userPassword2Validator" style="display: none;"></div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" type="submit" id="submitForm">Submit</button>
+        </form>
+    </div>
+</div>
+
+<script type="text/javascript">
+<!--
+    function validatePw(password) {
+        return $.post("/Setup/ValidatePW",{
+            password: password
+        });
+    }
+
+    $('#submitForm').click(function() {
+        var form = $("#formUser");
+        // reset old errors
+        $(".form-control").each(function() {
+            this.setCustomValidity("");
+        });
+        // validate form
+        if (this.checkValidity() === true) {
+            // check password
+            var userPasswordValidator = $("#userPasswordValidator");
+            var userPassword2Validator = $("#userPassword2Validator");
+            var userPassword = $("#userPassword");
+            var userPassword2 = $("#userPassword2");
+
+            if (userPassword.val() !== userPassword2.val()) {
+                userPassword2[0].setCustomValidity("API error");
+                userPassword2Validator
+                    .html("The input is not the same")
+                    .removeClass("valid-feedback")
+                    .addClass("invalid-feedback")
+                    .show();
+            }
+            else
+            {
+                userPassword2Validator.hide();
+
+                validatePw(userPassword.val())
+                .done(function(data) {
+                        if (data.state === 0) {
+                            // submit form
+                            form.submit();
+                        } else {
+                            userPassword[0].setCustomValidity("API error");
+                            userPasswordValidator
+                                .html(data.message)
+                                .removeClass("valid-feedback")
+                                .addClass("invalid-feedback")
+                                .show();
+                        }
+                    })
+                .fail(function() {
+                        userPasswordValidator
+                            .html("API call failed! Please check your input and try again.")
+                            .removeClass("valid-feedback")
+                            .addClass("invalid-feedback")
+                            .show();
+                    });
+            }
+        }
+        form.addClass("was-validated");
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    });
+-->
+</script>

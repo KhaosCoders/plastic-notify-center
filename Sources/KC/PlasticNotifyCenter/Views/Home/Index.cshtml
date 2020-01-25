@@ -1,0 +1,64 @@
+﻿@{
+    ViewData["Title"] = "Stats";
+}
+@using PlasticNotifyCenter.Models
+@model StatsViewModel
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            Stats
+        </h1>
+    </div>
+    <hr class="my-4">
+    <div class="row">
+        <div class="col-sm text-center">
+            <h4>Trigger-Calls</h5>
+            <table class="table table-sm">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col text-left">Trigger</th>
+                        <th scope="col"><span class="badge badge-pill badge-secondary" data-toggle="tooltip" title="Trigger calls"><i class="fas fa-bullseye"></i></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach(var stat in Model.TriggerStats)
+                {
+                    <tr>
+                        <td class="text-left">@stat.Name</td>
+                        <td><span class="badge badge-pill badge-secondary">@stat.Count</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+        <div class="col-sm text-center border-right border-left">
+            <h4>Rules</h5>
+            <p class="h4">
+                <span class="badge badge-pill badge-primary">@Model.RuleCount</span>
+            </p>
+        </div>
+        <div class="col-sm text-center">
+            <h4>Notifications</h5>
+            <table class="table table-sm">
+                <thead class="thead-dark">
+                    <tr>
+                        <th scope="col text-left">Notifier</th>
+                        <th scope="col"><span class="badge badge-pill badge-danger" data-toggle="tooltip" title="Failed notifications"><i class="fas fa-fire"></i></span></th>
+                        <th scope="col"><span class="badge badge-pill badge-success" data-toggle="tooltip" title="Successfull notifications"><i class="fas fa-check"></i></span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach(var stat in Model.NotificationStats)
+                {
+                    <tr>
+                        <td class="text-left">@Html.Raw(stat.Icon) @stat.Notifier</td>
+                        <td><span class="badge badge-pill badge-danger">@stat.FailedCount</span></td>
+                        <td><span class="badge badge-pill badge-success">@stat.SuccessCount</span></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

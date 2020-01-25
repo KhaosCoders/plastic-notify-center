@@ -1,0 +1,53 @@
+@{
+    ViewData["Title"] = "Administration";
+}
+@using PlasticNotifyCenter.Data
+@model AppSettings
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            Administration
+        </h1>
+    </div>
+    <hr class="my-4">
+    <ul class="nav nav-tabs">
+        <li class="nav-link active">
+            <a asp-area="" asp-controller="Admin" asp-action="Index">General</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Groups">Groups</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="LDAP">LDAP</a>
+        </li>
+        <li class="nav-link">
+            <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
+        </li>
+    </ul>
+    <div class="row">
+        <form asp-area="" asp-controller="Admin" asp-action="Index" method="post">
+
+            <div class="form-group text-left">
+                <label for="baseUrl">Base URL</label>
+                <input type="text" class="form-control" id="baseUrl" name="baseUrl" aria-describedby="baseUrlHelp" placeholder="Enter the base url" required value="@Model.BaseUrl">
+                <small id="baseUrlHelp" class="form-text text-muted">The base URL is the URL you use to access this service. <b>It has to be accessable from the Plastic SCM Server as well.</b></small>
+                <div id="baseUrlValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="allowRegistration" name="allowRegistration" aria-describedby="allowRegistrationHelp" @(Model.AllowRegistration ? "checked" : "")>
+                    <label class="form-check-label" for="allowRegistration">Allow User Registration</label>
+                </div>
+                <small id="allowRegistrationHelp" class="form-text text-muted">You can deactivate the registration form here</small>
+                <div id="allowRegistrationValidator" style="display: none;"></div>
+            </div>
+
+            <button class="btn btn-primary">Save</button>
+        </form>
+    </div>
+</div>

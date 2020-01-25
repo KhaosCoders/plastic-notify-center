@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Notifier";
+}
+@using PlasticNotifyCenter.Models
+@model NotifierViewModel
+
+<div class="container">
+    <div class="row">
+        <h1 class="display-1">
+            Notifiers
+        </h1>
+    </div>
+    <hr class="my-4">
+    <div class="row">
+        <div class="col-3">
+            <form asp-area="" asp-controller="Notifier" asp-action="New" method="post">
+                <div class="input-group mb-3">
+                    <select class="form-control" name="typedId" aria-label="Notifier class" aria-describedby="basic-addon2">
+                        @foreach(var notifierType in Model.NotifierTypes)
+                        {
+                            <option value="@notifierType.Id">
+                                @notifierType.Name
+                            </option>
+                        }
+                    </select>
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="submit">New</button>
+                    </div>
+                </div>
+            </form>
+            <div class="list-group">
+                @foreach(var notifier in Model.Notifiers)
+                {
+                <a class="list-group-item list-group-item-action @(notifier.Id == Model.SelectedNotifier.Id ? "active" : "")"
+                   asp-area="" asp-controller="Notifier" asp-action="Index" asp-route-id="@notifier.Id">@Html.Raw(notifier.Icon) @notifier.Name</a>
+                }
+            </div>
+        </div>
+        <div class="col-9">
+            @Html.DisplayFor(Model => Model.SelectedNotifier, Model.SelectedNotifier.GetType().Name + "Form")
+        </div>
+    </div>
+</div>
+
+@section modals {
+    @Html.DisplayFor(Model => Model.SelectedNotifier, Model.SelectedNotifier.GetType().Name + "Modal")
+}
