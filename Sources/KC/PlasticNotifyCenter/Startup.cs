@@ -15,6 +15,7 @@ using PlasticNotifyCenter.Data.Identity;
 using PlasticNotifyCenter.Notifiers;
 using PlasticNotifyCenter.Services;
 using Serilog;
+using PlasticNotifyCenter.Services.Background;
 
 namespace PlasticNotifyCenter
 {
@@ -52,6 +53,10 @@ namespace PlasticNotifyCenter
 
             // App-Settings
             services.AddTransient<IAppSettingsService, AppSettingsService>();
+
+            // LDAP
+            services.AddTransient<ILdapService, LdapService>();
+            services.AddHostedService<LdapSyncService>();
 
             // Identity
             services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)

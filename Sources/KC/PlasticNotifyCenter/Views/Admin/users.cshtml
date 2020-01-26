@@ -38,6 +38,7 @@
             <th scope="col">Name</th>
             <th scope="col">Email</th>
             <th scope="col">Repository</th>
+            <th scope="col">State</th>
             <th scope="col">Actions</th>
         </thead>
         @foreach(var user in Model.Users)
@@ -47,9 +48,15 @@
             <td>@user.Email</td>
             <td>@user.Origin</td>
             <td>
-                <a class="btn btn-primary" asp-area="" asp-controller="Admin" asp-action="User"  asp-route-id="@user.Id">Edit</a>
+            @if (user.LockoutEnd > DateTime.Now)
+            {
+                <span class="badge badge-secondary">Inactive</span>
+            }
+            </td>
+            <td>
             @if (user.Origin == PlasticNotifyCenter.Data.Identity.Origins.Local)
             {
+                <a class="btn btn-primary" asp-area="" asp-controller="Admin" asp-action="User"  asp-route-id="@user.Id">Edit</a>
                 <a class="btn btn-danger" href="#" onclick="$('#deleteUserId').val('@user.Id')" data-toggle="modal" data-target="#deleteUserModal">Delete</a>
             }
             </td>

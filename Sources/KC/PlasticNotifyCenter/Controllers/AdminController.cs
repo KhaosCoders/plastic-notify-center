@@ -8,6 +8,10 @@ using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Data.Identity;
 using PlasticNotifyCenter.Models;
+using PlasticNotifyCenter.Services;
+using PlasticNotifyCenter.Controllers.Api;
+using System.DirectoryServices;
+using System;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -23,18 +27,21 @@ namespace PlasticNotifyCenter.Controllers
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly IAuthorizationService _authorizationService;
+        private readonly ILdapService _ldapService;
 
         public AdminController(ILogger<AdminController> logger,
                                PncDbContext dbContect,
                                UserManager<User> userManager,
                                RoleManager<Role> roleManager,
-                               IAuthorizationService authorizationService)
+                               IAuthorizationService authorizationService,
+                               ILdapService ldapService)
         {
             _dbContext = dbContect;
             _logger = logger;
             _userManager = userManager;
             _roleManager = roleManager;
             _authorizationService = authorizationService;
+            _ldapService = ldapService;
         }
 
         #endregion
@@ -93,7 +100,11 @@ namespace PlasticNotifyCenter.Controllers
             // Show all users in view
             return View(new UsersViewModel()
             {
-                Users = _userManager.Users.ToArray()
+                Users = _userManager.Users.ToList()
+                            .OrderBy(user => user.Origin == Origins.Local ? 0 : 1)
+                            .ThenBy(user => user.LockoutEnd < DateTime.Now ? 0 : 1)
+                            .ThenBy(user => user.UserName)
+                            .ToArray()
             });
         }
 
@@ -448,6 +459,120 @@ namespace PlasticNotifyCenter.Controllers
             // AppSettings has only one record
             var appSettings = _dbContext.AppSettings.First();
             return View(appSettings);
+        }
+
+
+        [HttpPost("/Admin/LDAP")]
+        public async Task<IActionResult> SaveLDAPAsync(
+            [FromForm] string ldapDcHost,
+            [FromForm] int ldapDcPort,
+            [FromForm] bool ldapDcSSL,
+            [FromForm] string ldapBaseDN,
+            [FromForm] string ldapUserDN,
+            [FromForm] string ldapGroupDN,
+            [FromForm] string ldapUserFilter,
+            [FromForm] string ldapGroupFilter,
+            [FromForm] string ldapUserNameAttr,
+            [FromForm] string ldapUserEmailAttr,
+            [FromForm] string ldapGroupNameAttr,
+            [FromForm] string ldapMember)
+        {
+            // Check authorization
+            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            {
+                return Unauthorized();
+            }
+
+            // LDAP settings are part of AppSettings
+            // AppSettings has only one record
+            var appSettings = _dbContext.AppSettings.First();
+            appSettings.LdapDcHost = ldapDcHost;
+            appSettings.LdapDcPort = ldapDcPort;
+            appSettings.LdapDcSSL = ldapDcSSL;
+            appSettings.LdapBaseDN = ldapBaseDN;
+            appSettings.LdapUserDN = ldapUserDN;
+            appSettings.LdapGroupDN = ldapGroupDN;
+            appSettings.LdapUserFilter = ldapUserFilter;
+            appSettings.LdapGroupFilter = ldapGroupFilter;
+            appSettings.LdapUserNameAttr = ldapUserNameAttr;
+            appSettings.LdapUserEmailAttr = ldapUserEmailAttr;
+            appSettings.LdapGroupNameAttr = ldapGroupNameAttr;
+            appSettings.LdapMember = ldapMember;
+
+            // Save
+            await _dbContext.SaveChangesAsync();
+
+            // Reload view
+            return RedirectToAction("LDAP");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> TestLDAPAsync(
+            [FromForm] string ldapDcHost,
+            [FromForm] int ldapDcPort,
+            [FromForm] bool ldapDcSSL,
+            [FromForm] string ldapBaseDN,
+            [FromForm] string ldapUserDN,
+            [FromForm] string ldapGroupDN,
+            [FromForm] string ldapUserFilter,
+            [FromForm] string ldapGroupFilter,
+            [FromForm] string ldapUserNameAttr,
+            [FromForm] string ldapUserEmailAttr,
+            [FromForm] string ldapGroupNameAttr,
+            [FromForm] string ldapMember)
+        {
+            // Check authorization
+            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            {
+                return Unauthorized();
+            }
+
+            // Combine host, port and protocol to a single string
+            string ldapStr = _ldapService.GetLdapStr(ldapDcSSL, ldapDcHost, ldapDcPort);
+
+            _logger.LogDebug("Testing LDAP for config: Base={0}, BaseDN={1}, UserDN={2}, GroupDN={3}, UserFilter={4}, GroupFilter={5}, UserNameAtt={6}, UserMailAtt={7}, GroupNameAtt={8}, MemberAtt={9}",
+                ldapStr, ldapBaseDN, ldapUserDN, ldapGroupDN, ldapUserFilter, ldapGroupFilter, ldapUserNameAttr, ldapUserEmailAttr, ldapGroupNameAttr, ldapMember);
+
+            int userCount = 0;
+            int groupCount = 0;
+            try
+            {
+                // Try to connect
+                if(!_ldapService.TestConnection(ldapStr))
+                {
+                    _logger.LogWarning("LDAP connection test failed");
+                    return Ok(new FailureResponse("Connection test failed: Check hostname and credientials"));
+                }
+
+                // Count entries
+                userCount = _ldapService.GetUserCount(ldapStr, ldapBaseDN, ldapUserDN, ldapUserFilter);
+                groupCount = _ldapService.GetGroupCount(ldapStr, ldapBaseDN, ldapGroupDN, ldapGroupFilter);
+
+                // Test user attributes
+                if(userCount > 0 
+                    && !_ldapService.TestUserAttributes(ldapStr, ldapBaseDN, ldapUserDN, ldapUserFilter, ldapUserNameAttr, ldapUserEmailAttr))
+                {
+                    _logger.LogWarning("User attribute test failed");
+                    return Ok(new FailureResponse("User attributes not found"));
+                }
+
+                // Test group attributes
+                if(groupCount > 0 
+                    && !_ldapService.TestGroupAttrbutes(ldapStr, ldapBaseDN, ldapGroupDN, ldapGroupFilter, ldapGroupNameAttr, ldapMember))
+                {
+                    _logger.LogWarning("Group attribute test failed");
+                    return Ok(new FailureResponse("Group attributes not found"));
+                }
+            }
+            catch (Exception e)
+            {
+                _logger.LogWarning(e, "Error while LDAP test");
+                return Ok(new ErrorRespose(e));
+            }
+
+            // Return success message
+            _logger.LogDebug("LDAP test successfull. Found {0} users and {1} groups.", userCount, groupCount);
+            return Ok(new StringValueRespose($"Found {userCount} users and {groupCount} groups"));
         }
 
         #endregion

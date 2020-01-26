@@ -28,7 +28,158 @@
             <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
         </li>
     </ul>
-    <p>
-        Not done jet...
-    </p>
+    <div class="row">
+        <form id="ldapForm" asp-area="" asp-controller="Admin" asp-action="LDAP" method="post">
+            
+            <div class="form-group text-left row">
+                <label class="col-sm-12 col-form-label font-weight-bold">Domain-Controller</label>
+            </div>
+            <div class="form-row">
+                <div class="form-group text-left col-md-8">
+                    <label for="ldapDcHost">Hostname/IP</label>
+                    <input type="text" class="form-control" id="ldapDcHost" name="ldapDcHost" aria-describedby="ldapDcHostHelp" placeholder="Enter the DC hostname" required value="@Model.LdapDcHost">
+                    <small id="ldapDcHostHelp" class="form-text text-muted">Hostname or IP address of your domain controller. Example: dc.example.com</small>
+                    <div id="ldapDcHostValidator" style="display: none;"></div>
+                </div>
+                <div class="form-group text-left col-md-4">
+                    <label for="ldapDcPort">SMTP Port</label>
+                    <input type="text" class="form-control" id="ldapDcPort"name="ldapDcPort" aria-describedby="ldapDcPortHelp"
+                        placeholder="Enter the LDAP port" value="389" required value="@Model.LdapDcPort">
+                    <small id="ldapDcPortHelp" class="form-text text-muted">LDAP default ports are <i>389</i> (Non-SSL) and <i>636</i> (SSL).</small>
+                    <div id="ldapDcPortValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="ldapDcSSL" name="ldapDcSSL" aria-describedby="ldapDcSSLHelp" @(Model.LdapDcSSL ? "checked" : "")>
+                    <label class="form-check-label" for="ldapDcSSL">Use SSL</label>
+                </div>
+                <small id="ldapDcSSLHelp" class="form-text text-muted">You should use SSL encryption whenever possible.</small>
+                <div id="ldapDcSSLValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left row">
+                <label class="col-sm-12 col-form-label font-weight-bold">LDAP Directories</label>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapBaseDN">Base DN</label>
+                <input type="text" class="form-control" id="ldapBaseDN" name="ldapBaseDN" aria-describedby="ldapBaseDNHelp" placeholder="Enter the base DN" required value="@Model.LdapBaseDN">
+                <small id="ldapBaseDNHelp" class="form-text text-muted">Base DN should look like: DC=example,DC=com. Just split your domain URL on each dot.</small>
+                <div id="ldapBaseDNValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left">
+                <label for="ldapUserDN">User DN</label>
+                <input type="text" class="form-control" id="ldapUserDN" name="ldapUserDN" aria-describedby="ldapUserDNHelp" placeholder="Enter the user DN" required value="@Model.LdapUserDN">
+                <small id="ldapUserDNHelp" class="form-text text-muted">User directory path. Example: OU=Users,OU=Devision.</small>
+                <div id="ldapUserDNValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left">
+                <label for="ldapGroupDN">Group DN</label>
+                <input type="text" class="form-control" id="ldapGroupDN" name="ldapGroupDN" aria-describedby="ldapGroupDNHelp" placeholder="Enter the group DN" required value="@Model.LdapGroupDN">
+                <small id="ldapGroupDNHelp" class="form-text text-muted">Group directory path. Example: OU=Groups,OU=Devision.</small>
+                <div id="ldapGroupDNValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left row">
+                <label class="col-sm-12 col-form-label font-weight-bold">Filters</label>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapUserFilter">User Filter</label>
+                <input type="text" class="form-control" id="ldapUserFilter" name="ldapUserFilter" aria-describedby="ldapUserFilterHelp" placeholder="Enter a user filter" value="@Model.LdapUserFilter">
+                <small id="ldapUserFilterHelp" class="form-text text-muted">Filter expression used to find user entries.</small>
+                <div id="ldapUserFilterValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left">
+                <label for="ldapGroupFilter">Group Filter</label>
+                <input type="text" class="form-control" id="ldapGroupFilter" name="ldapGroupFilter" aria-describedby="ldapGroupFilterHelp" placeholder="Enter a group filter" value="@Model.LdapGroupFilter">
+                <small id="ldapGroupFilterHelp" class="form-text text-muted">Filter expression used to find groups entries.</small>
+                <div id="ldapGroupFilterValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left row">
+                <label class="col-sm-12 col-form-label font-weight-bold">User Attributes</label>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapUserNameAttr">User Name</label>
+                <input type="text" class="form-control" id="ldapUserNameAttr" name="ldapUserNameAttr" aria-describedby="ldapUserNameAttrHelp" 
+                    placeholder="Enter the name of the user name attribute" value="@Model.LdapUserNameAttr">
+                <small id="ldapUserNameAttrHelp" class="form-text text-muted">Name of attribute used as user name.</small>
+                <div id="ldapUserNameAttrValidator" style="display: none;"></div>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapUserEmailAttr">Mail-Address</label>
+                <input type="text" class="form-control" id="ldapUserEmailAttr" name="ldapUserEmailAttr" aria-describedby="ldapUserEmailAttrHelp" 
+                    placeholder="Enter the name of the email attribute" value="@Model.LdapUserEmailAttr">
+                <small id="ldapUserEmailAttrHelp" class="form-text text-muted">Name of attribute used as email address.</small>
+                <div id="ldapUserEmailAttrValidator" style="display: none;"></div>
+            </div>
+
+            <div class="form-group text-left row">
+                <label class="col-sm-12 col-form-label font-weight-bold">Group Attributes</label>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapGroupNameAttr">Group Name</label>
+                <input type="text" class="form-control" id="ldapGroupNameAttr" name="ldapGroupNameAttr" aria-describedby="ldapGroupNameAttrHelp" 
+                    placeholder="Enter the name of the user name attribute" value="@Model.LdapGroupNameAttr">
+                <small id="ldapGroupNameAttrHelp" class="form-text text-muted">Name of attribute used as group name.</small>
+                <div id="ldapGroupNameAttrValidator" style="display: none;"></div>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapMember">Group Members</label>
+                <input type="text" class="form-control" id="ldapMember" name="ldapMember" aria-describedby="ldapMemberHelp" 
+                    placeholder="Enter the name of the group member attribute" value="@Model.LdapMember">
+                <small id="ldapMemberHelp" class="form-text text-muted">Name of attribute used when finding group members.</small>
+                <div id="ldapMemberValidator" style="display: none;"></div>
+            </div>
+
+            <button class="btn btn-primary">Save</button>
+            <button class="btn btn-secondary" id="ldapTestBtn">Test configuration</button>
+            <span id="ldapTestResult"></span>
+        </form>
+    </div>
 </div>
+
+<script type="text/javascript">
+<!--
+(function($) {
+    $("#ldapDcSSL").change(function() {
+        $("#ldapDcPort").val(this.checked ? 636 : 389);
+    });
+    
+    $('#ldapTestBtn').click(function(event) {
+        var form = $('#ldapForm');
+        // reset old errors
+        $(".form-control").each(function() {
+            this.setCustomValidity("");
+        });
+        // validate form
+        if (form[0].checkValidity() === true) {
+            testLdap(form);
+        }
+        form.addClass("was-validated");
+        event.preventDefault();
+        event.stopPropagation();
+        return false;
+    });
+
+    function testLdap(form) {
+        var result = $('#ldapTestResult');
+        result.html('Test running...');
+        $.post("/Admin/TestLdap", form.serialize())
+            .done(function(data) {
+                if (data.state === 0) {
+                    result.html(data.value);
+                } else {
+                    result.html(data.message);
+                }
+            })
+            .fail(function() {
+                result.html("API call failed! Please check your input and try again.");
+            });
+    }
+})($);
+-->
+</script>

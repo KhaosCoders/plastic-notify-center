@@ -238,6 +238,8 @@ namespace PlasticNotifyCenter.Notifiers
                     : allUsers
                         .Where(u => userManager.IsInRoleAsync(u, recipient.Role.Name).Result)
                         .ToArray())
+                // Only active users
+                .Where(user => user.LockoutEnd < DateTime.Now)
                 // return a list of destinct users, even if they are in multiple included user groups
                 .Distinct(new UserEqualityComparer())
                 .ToArray();

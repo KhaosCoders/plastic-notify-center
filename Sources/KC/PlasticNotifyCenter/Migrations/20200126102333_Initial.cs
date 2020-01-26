@@ -14,7 +14,20 @@ namespace PlasticNotifyCenter.Migrations
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     BaseUrl = table.Column<string>(nullable: false),
-                    AllowRegistration = table.Column<bool>(nullable: false)
+                    AllowRegistration = table.Column<bool>(nullable: false),
+                    LdapSyncTimestamp = table.Column<DateTime>(nullable: false),
+                    LdapDcHost = table.Column<string>(nullable: true),
+                    LdapDcPort = table.Column<int>(nullable: false),
+                    LdapDcSSL = table.Column<bool>(nullable: false),
+                    LdapBaseDN = table.Column<string>(nullable: true),
+                    LdapUserDN = table.Column<string>(nullable: true),
+                    LdapGroupDN = table.Column<string>(nullable: true),
+                    LdapUserFilter = table.Column<string>(nullable: true),
+                    LdapGroupFilter = table.Column<string>(nullable: true),
+                    LdapUserNameAttr = table.Column<string>(nullable: true),
+                    LdapUserEmailAttr = table.Column<string>(nullable: true),
+                    LdapGroupNameAttr = table.Column<string>(nullable: true),
+                    LdapMember = table.Column<string>(nullable: true)
                 },
                 constraints: table =>
                 {

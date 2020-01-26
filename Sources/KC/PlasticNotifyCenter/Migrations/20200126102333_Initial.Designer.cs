@@ -9,7 +9,7 @@ using PlasticNotifyCenter.Data;
 namespace PlasticNotifyCenter.Migrations
 {
     [DbContext(typeof(PncDbContext))]
-    [Migration("20200125075351_Initial")]
+    [Migration("20200126102333_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -135,6 +135,45 @@ namespace PlasticNotifyCenter.Migrations
 
                     b.Property<string>("BaseUrl")
                         .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapBaseDN")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapDcHost")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("LdapDcPort")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("LdapDcSSL")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("LdapGroupDN")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapGroupFilter")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapGroupNameAttr")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapMember")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LdapSyncTimestamp")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapUserDN")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapUserEmailAttr")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapUserFilter")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LdapUserNameAttr")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

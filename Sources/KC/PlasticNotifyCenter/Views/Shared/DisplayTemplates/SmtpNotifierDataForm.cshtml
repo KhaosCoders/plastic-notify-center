@@ -21,7 +21,7 @@
         <div class="form-group text-left col-md-4">
             <label for="smtpPort">SMTP Port</label>
             <input type="text" class="form-control" id="smtpPort" aria-describedby="smtpPortHelp"
-                placeholder="Enter the SMTP post of your mail server" value="465" required value="@(Model?.Port.ToString() ?? "")">
+                placeholder="Enter the SMTP port of your mail server" value="465" required value="@(Model?.Port.ToString() ?? "")">
             <small id="smtpPortHelp" class="form-text text-muted">SMTP default ports are <i>25</i> (Non-SSL) and <i>465</i> (SSL).</small>
             <div id="smtpPortValidator" style="display: none;"></div>
         </div>
