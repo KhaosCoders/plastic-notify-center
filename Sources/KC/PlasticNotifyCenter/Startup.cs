@@ -14,6 +14,7 @@ using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data.Identity;
 using PlasticNotifyCenter.Notifiers;
 using PlasticNotifyCenter.Services;
+using Serilog;
 
 namespace PlasticNotifyCenter
 {
@@ -32,6 +33,8 @@ namespace PlasticNotifyCenter
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            Log.Debug("ConfigureServices");
+
             // Authorize-Handlers
             services.AddSingleton<IAuthorizationHandler,
                           AdministratorsAuthorizationHandler>();
@@ -91,6 +94,8 @@ namespace PlasticNotifyCenter
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            Log.Debug("Configure App");
+
             if (env.IsDevelopment())
             {
                 // Show exception and database error pages in dev environment
