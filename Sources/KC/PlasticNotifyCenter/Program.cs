@@ -15,6 +15,7 @@ namespace PlasticNotifyCenter
         public static void Main(string[] args)
         {
             // Windows Services start at the wrong directory
+            bool isWinService = Directory.GetCurrentDirectory().Contains(@"\WINDOWS\system", StringComparison.CurrentCultureIgnoreCase);
             Directory.SetCurrentDirectory(AppContext.BaseDirectory);
 
             // Setup logging
@@ -28,14 +29,22 @@ namespace PlasticNotifyCenter
             try
             {
                 // Create ASP.NET webapp
-                CreateHostBuilder(args)
-                        .Build()
-                        .Run();
+                var hostBuilder = CreateHostBuilder(args);
+
+                // Setup as Windows service, if started in system directory
+                if (isWinService)
+                {
+                    hostBuilder.UseWindowsService();
+                }
+
+                // Run app
+                hostBuilder.Build()
+                           .Run();
             }
             catch (Exception ex)
             {
                 Log.Fatal(ex, "Host terminated unexpectedly");
-                throw;
+                throw; // Throw exception, so Windows service crashes and exception will be logged to event prot
             }
             finally
             {
@@ -46,7 +55,6 @@ namespace PlasticNotifyCenter
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .UseWindowsService()
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>();
