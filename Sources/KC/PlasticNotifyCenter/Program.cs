@@ -16,7 +16,10 @@ namespace PlasticNotifyCenter
         {
             // Windows Services start at the wrong directory
             bool isWinService = Directory.GetCurrentDirectory().Contains(@"\WINDOWS\system", StringComparison.CurrentCultureIgnoreCase);
-            Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+            if (isWinService)
+            {
+                Directory.SetCurrentDirectory(AppContext.BaseDirectory);
+            }
 
             // Setup logging
             Log.Logger = new LoggerConfiguration()
