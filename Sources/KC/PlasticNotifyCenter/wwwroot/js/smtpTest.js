@@ -21,7 +21,7 @@
                         "/Setup/SmtpTest",
                         JSON.stringify({
                             Host: $("#smtpHost").val(),
-                            EnableSSL: $("#smtpSSL").val() === "on",
+                            EnableSSL: $("#smtpSSL")[0].checked,
                             Port: parseInt($("#smtpPort").val()),
                             SenderMail: $("#smtpFromMail").val(),
                             SenderAlias: $("#smtpFromName").val(),

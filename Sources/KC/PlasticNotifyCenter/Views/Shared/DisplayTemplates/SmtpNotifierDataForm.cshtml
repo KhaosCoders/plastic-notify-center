@@ -1,7 +1,7 @@
 @using PlasticNotifyCenter.Data
 @model SmtpNotifierData
 
-<h2>@(Model?.Id == null ? "#3 &mdash; STMP Setup" : "SMTP Notifier")</h2>
+<h2>@Html.Raw(Model?.Id == null ? "#3 &mdash; STMP Setup" : "SMTP Notifier")</h2>
 <form id="formSmtp" class="needs-validation">
     <div class="form-group text-left">
         <label for="smtpName">Notifier Name</label>
@@ -147,7 +147,7 @@
                 data: JSON.stringify({
                     Name: $("#smtpName").val(),
                     Host: $("#smtpHost").val(),
-                    EnableSSL: $("#smtpSSL").val() === "on",
+                    EnableSSL: $("#smtpSSL")[0].checked,
                     Port: parseInt($("#smtpPort").val()),
                     SenderMail: $("#smtpFromMail").val(),
                     SenderAlias: $("#smtpFromName").val(),

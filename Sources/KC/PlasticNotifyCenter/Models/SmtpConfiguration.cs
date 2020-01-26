@@ -102,5 +102,11 @@ namespace PlasticNotifyCenter.Models
                 Username = data.Username,
                 Password = data.Password
             };
+
+        /// <summary>
+        /// Transforms the config object to a string (JSON  format)
+        /// </summary>
+        public override string ToString() =>
+            JsonSerializer.Serialize(this, this.GetType());
     }
 }

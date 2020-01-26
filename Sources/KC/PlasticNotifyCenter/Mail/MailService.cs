@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text;
 using System.Threading;
+using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Models;
 
 namespace PlasticNotifyCenter.Mail
@@ -13,6 +14,17 @@ namespace PlasticNotifyCenter.Mail
     /// </summary>
     public class MailService : IMailService
     {
+        #region Dependencies
+
+        private readonly ILogger<MailService> _logger;
+
+        public MailService(ILogger<MailService> logger)
+        {
+            _logger = logger;
+        }
+
+        #endregion
+
         /// <summary>
         /// Tries to send a test mail via SMTP
         /// </summary>
@@ -20,6 +32,8 @@ namespace PlasticNotifyCenter.Mail
         /// <returns>true, is the message was send successfully</returns>
         public bool SendTestMail(SmtpConfiguration data)
         {
+            _logger.LogDebug("Testing SMTP configuration: {0}", data);
+
             // Create new client
             SmtpClient client = CreateSmtpClient(data);
 
@@ -97,7 +111,6 @@ Looks like it works =)
         /// Creates a new MailMessage
         /// </summary>
         /// <param name="data">SMTP configuration</param>
-        /// <returns></returns>
         public MailMessage CreateMessage(SmtpConfiguration data) =>
             CreateMessage(data.SenderMail, data.SenderAlias);
 
@@ -106,7 +119,6 @@ Looks like it works =)
         /// </summary>
         /// <param name="senderMail">Sender email address</param>
         /// <param name="senderAlias">Sender name</param>
-        /// <returns></returns>
         private MailMessage CreateMessage(string senderMail, string senderAlias = null) =>
             new MailMessage()
             {
@@ -138,7 +150,6 @@ Looks like it works =)
         /// Creates a new SmtpClient instance
         /// </summary>
         /// <param name="data">SMTP configuration</param>
-        /// <returns></returns>
         public SmtpClient CreateSmtpClient(SmtpConfiguration data)
         {
             var client = CreateSmtpClient(data.Host, data.Port, data.EnableSSL);
@@ -154,15 +165,15 @@ Looks like it works =)
         /// </summary>
         /// <param name="host">hostname</param>
         /// <param name="port">port</param>
-        /// <returns></returns>
         private SmtpClient CreateSmtpClient(string host, int port = 0, bool enableSSL = false)
         {
             SmtpClient client = port != 0
-                ? new SmtpClient(host, port) { EnableSsl = enableSSL }
-                : new SmtpClient(host) { EnableSsl = enableSSL };
-            client.SendCompleted += new SendCompletedEventHandler(Mail_SendCompleted);
+                ? new SmtpClient(host, port)
+                : new SmtpClient(host);
 
+            client.EnableSsl = enableSSL;
             client.Timeout = (int)TimeSpan.FromSeconds(30).TotalMilliseconds;
+            client.SendCompleted += new SendCompletedEventHandler(Mail_SendCompleted);
 
             return client;
         }

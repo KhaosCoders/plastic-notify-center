@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Identity;
 using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data.Identity;
 using PlasticNotifyCenter.Utils;
+using System.Security.Authentication;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -161,6 +162,7 @@ namespace PlasticNotifyCenter.Controllers
                 {
                     return BadRequest();
                 }
+                _logger.LogDebug("Form body for SMTP test: {0}", body);
                 smtpTest = await SmtpConfiguration.ParseJsonAsync(body);
             }
 
@@ -181,10 +183,15 @@ namespace PlasticNotifyCenter.Controllers
                 // Return success
                 return Ok(new SuccessResponse());
             }
-            catch (SmtpException ex)
+            catch (SmtpException exSmtp)
             {
-                // Failed by exception
-                return Ok(new ErrorRespose(ex));
+                // Failed with exception
+                return Ok(new ErrorRespose(exSmtp));
+            }
+            catch(AuthenticationException exAuth)
+            {
+                // Failed with exception
+                return Ok(new ErrorRespose(exAuth));
             }
         }
 
