@@ -13,6 +13,11 @@ namespace PlasticNotifyCenter.Data.Managers
         /// Returns a list of stats for trigger calls
         /// </summary>
         IEnumerable<TriggerStats> GetTriggerStats();
+
+        /// <summary>
+        /// Return a list of all known trigger types
+        /// </summary>
+        IEnumerable<string> GetAllTriggerTypes();
     }
 
     /// <summary>
@@ -47,6 +52,16 @@ namespace PlasticNotifyCenter.Data.Managers
 
         #endregion
 
+        #region Trigger types
+
+
+        /// <summary>
+        /// Return a list of all known trigger types
+        /// </summary>
+        public IEnumerable<string> GetAllTriggerTypes() =>
+            _dbContext.TriggerHistory.GroupBy(r => r.Trigger).Select(g => g.Key);
+
+        #endregion
 
     }
 }

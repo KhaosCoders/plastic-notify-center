@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Utils;

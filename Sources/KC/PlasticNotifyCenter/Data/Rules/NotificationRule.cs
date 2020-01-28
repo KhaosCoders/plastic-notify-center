@@ -85,6 +85,25 @@ namespace PlasticNotifyCenter.Data
         public virtual ICollection<NotificationRecipient> Recipients { get; set; }
 
         /// <summary>
+        /// Updates all properties with new values
+        /// </summary>
+        /// <param name="name">Name of rule</param>
+        /// <param name="trigger">Name of trigger type</param>
+        /// <param name="filter">Advaced filter</param>
+        /// <param name="title">Message title</param>
+        /// <param name="message">Message body</param>
+        /// <param name="tags">Message tags</param>
+        public void UpdateProperties(string name, string trigger, string filter, string title, string message, string tags)
+        {
+            DisplayName = name;
+            Trigger = trigger;
+            AdvancedFilter = filter;
+            NotificationTitle = title;
+            NotificationBody = message;
+            NotificationTags = tags;
+        }
+
+        /// <summary>
         /// Create a new instance
         /// </summary>
         /// <remarks>

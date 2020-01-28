@@ -6,11 +6,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
 using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Data.Identity;
+using PlasticNotifyCenter.Data.Managers;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -22,61 +22,60 @@ namespace PlasticNotifyCenter.Controllers
         #region Dependencies
 
         private readonly ILogger<RulesController> _logger;
-        private readonly PncDbContext _dbContext;
         private readonly IAuthorizationService _authorizationService;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
+        private readonly INotificationRulesManager _notificationRulesManager;
+        private readonly ITriggerHistoryManager _triggerHistoryManager;
 
         public RulesController(ILogger<RulesController> logger,
                                PncDbContext dbContect,
                                IAuthorizationService authorizationService,
                                UserManager<User> userManager,
-                               RoleManager<Role> roleManager)
+                               RoleManager<Role> roleManager,
+                               INotificationRulesManager notificationRulesManager,
+                               ITriggerHistoryManager triggerHistoryManager)
         {
             _logger = logger;
-            _dbContext = dbContect;
             _authorizationService = authorizationService;
             _userManager = userManager;
             _roleManager = roleManager;
+            _notificationRulesManager = notificationRulesManager;
+            _triggerHistoryManager = triggerHistoryManager;
         }
 
         #endregion
 
-        [HttpGet]
-        public async Task<IActionResult> IndexAsync(string id)
+        [HttpGet("/Rules")]
+        public async Task<IActionResult> IndexAsync()
         {
             IEnumerable<NotificationRule> rules = null;
 
             // Show different subsets to different roles
-            if ((await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded)
+            if (await User.IsCoordinatorAsync(_authorizationService))
             {
                 // Coordinator (and Admin) may see all rules
-                rules = _dbContext.Rules
-                                    .Include(rule => rule.Owner)
-                                    .Include(rule => rule.Notifiers);
+                rules = _notificationRulesManager.Rules;
             }
             else
             {
                 // Everybody else only sees their own rules
                 IdentityUser user = await _userManager.GetUserAsync(User);
-                rules = _dbContext.Rules
-                                    .Include(rule => rule.Owner)
-                                    .Include(rule => rule.Notifiers)
-                                    .Where(rule => rule.Owner == user);
+                rules = _notificationRulesManager.GetRulesOwnedBy(user);
             }
 
             return View(new RulesViewModel(rules.ToArray()));
         }
 
-        [HttpGet]
+        [HttpGet("/Rules/New")]
         public IActionResult New()
         {
             // Show edit form with new templated rule
             return View("edit", CreateEditViewModel(new NotificationRule("New Rule")));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> EditAsync(string id)
+        [HttpGet("/Rules/Edit/{id}")]
+        public async Task<IActionResult> EditAsync([FromRoute] string id)
         {
             // Check parameter
             if (string.IsNullOrWhiteSpace(id))
@@ -85,18 +84,14 @@ namespace PlasticNotifyCenter.Controllers
             }
 
             // Find the rule
-            NotificationRule rule = _dbContext.Rules
-                                    .Include(r => r.Notifiers)
-                                    .Include(r => r.Recipients).ThenInclude(n => n.User)
-                                    .Include(r => r.Recipients).ThenInclude(n => n.Role)
-                                    .FirstOrDefault(r => r.Id.Equals(id));
+            NotificationRule rule = _notificationRulesManager.GetRuleById(id);
             if (rule == null)
             {
                 return NotFound();
             }
 
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded
+            if (!(await User.IsCoordinatorAsync(_authorizationService))
                 && rule.Owner != await _userManager.GetUserAsync(User))
             {
                 // Not coordinator nor owner
@@ -110,39 +105,16 @@ namespace PlasticNotifyCenter.Controllers
         /// <summary>
         /// Prepares a view model for the edit form
         /// </summary>
-        /// <param name="rule"></param>
-        /// <returns></returns>
+        /// <param name="rule">Rule to edit</param>
         private EditRuleViewModel CreateEditViewModel(NotificationRule rule) =>
-            new EditRuleViewModel(rule, GetAllTriggers(), GetUnusedNotifiers(rule), GetUnassignedUsers(rule), GetUnassignedRoles(rule));
+            new EditRuleViewModel(
+                rule,
+                _triggerHistoryManager.GetAllTriggerTypes().ToArray(),
+                _notificationRulesManager.GetUnassignedNotifiers(rule).ToArray(),
+                _notificationRulesManager.GetUnassignedUsers(rule).ToArray(),
+                _notificationRulesManager.GetUnassignedRoles(rule).ToArray());
 
-        /// <summary>
-        /// Returns all trigger types
-        /// </summary>
-        private string[] GetAllTriggers() =>
-            _dbContext.TriggerHistory.GroupBy(r => r.Trigger).Select(g => g.Key).ToArray();
-
-        /// <summary>
-        /// Returns all unused notifiers
-        /// </summary>
-        /// <param name="rule">Rule</param>
-        private BaseNotifierData[] GetUnusedNotifiers(NotificationRule rule) =>
-            _dbContext.Notifiers.ToList().Except(rule.Notifiers).ToArray();
-
-        /// <summary>
-        /// Returns all unassigned users
-        /// </summary>
-        /// <param name="rule">Rule</param>
-        private User[] GetUnassignedUsers(NotificationRule rule) =>
-            _userManager.Users.ToList().Except(rule.Recipients.Select(r => r.User).ToArray()).ToArray();
-
-        /// <summary>
-        /// Returns all unassigned Roles
-        /// </summary>
-        /// <param name="rule">Rule</param>
-        private Role[] GetUnassignedRoles(NotificationRule rule) =>
-            _roleManager.Roles.ToList().Except(rule.Recipients.Select(r => r.Role).ToArray()).ToArray();
-
-        [HttpPost]
+        [HttpPost("/Rules/Save")]
         public async Task<IActionResult> SaveAsync(
             [FromForm] string id,
             [FromForm] string name,
@@ -162,114 +134,36 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Get current user
-            var currentUser = await _userManager.GetUserAsync(User);
-
-            NotificationRule rule;
-            if (string.IsNullOrWhiteSpace(id))
+            try
             {
-                // New rule
-                rule = new NotificationRule(currentUser);
-                rule.EnsureId();
-                await _dbContext.Rules.AddAsync(rule);
+                // Try save or create rule
+                await _notificationRulesManager.SaveOrCreateRuleAsync(
+                    id,
+                    User,
+                    name,
+                    trigger,
+                    filter,
+                    title,
+                    message,
+                    tags,
+                    notifiers,
+                    recipients
+                );
             }
-            else
+            catch (KeyNotFoundException kex)
             {
-                // Find the rule
-                rule = _dbContext.Rules
-                                    .Include(r => r.Notifiers)
-                                    .Include(r => r.Recipients).ThenInclude(n => n.User)
-                                    .Include(r => r.Recipients).ThenInclude(n => n.Role)
-                                    .FirstOrDefault(r => r.Id.Equals(id));
+                return NotFound(kex.Message);
             }
-
-            if (rule == null)
+            catch (InvalidOperationException oex)
             {
-                return NotFound();
+                return Forbid(oex.Message);
             }
-
-            // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded
-                && rule.Owner != currentUser)
-            {
-                // Not coordinator nor owner
-                return Forbid();
-            }
-
-            // Apply changes
-            rule.DisplayName = name;
-            rule.Trigger = trigger;
-            rule.AdvancedFilter = filter;
-            rule.NotificationTitle = title;
-            rule.NotificationBody = message;
-            rule.NotificationTags = tags;
-
-            // Change notifiers
-            rule.Notifiers.Clear();
-            foreach (var notifier in _dbContext.Notifiers.Where(n => notifiers.Contains(n.Id)))
-            {
-                rule.Notifiers.Add(notifier);
-            }
-
-            // Change recipients
-            List<string> addRecipients = new List<string>(recipients);
-
-            // Remove recipients
-            foreach (var curRecipient in rule.Recipients.ToList())
-            {
-                if (curRecipient.User != null)
-                {
-                    if (!recipients.Contains("U_" + curRecipient.User.Id))
-                    {
-                        rule.Recipients.Remove(curRecipient);
-                    }
-                    else
-                    {
-                        addRecipients.Remove("U_" + curRecipient.User.Id);
-                    }
-                }
-                else
-                {
-                    if (!recipients.Contains("G_" + curRecipient.Role.Id))
-                    {
-                        rule.Recipients.Remove(curRecipient);
-                    }
-                    else
-                    {
-                        addRecipients.Remove("G_" + curRecipient.Role.Id);
-                    }
-                }
-            }
-
-            // Add recipients
-            foreach (var addRecipient in addRecipients)
-            {
-                if (addRecipient.StartsWith("U"))
-                {
-                    var user = await _userManager.FindByIdAsync(addRecipient.Substring(2));
-                    if (user != null)
-                    {
-                        rule.Recipients.Add(new NotificationRecipient(user));
-                    }
-                }
-                else
-                {
-                    var role = await _roleManager.FindByIdAsync(addRecipient.Substring(2));
-                    if (role != null)
-                    {
-                        rule.Recipients.Add(new NotificationRecipient(role));
-                    }
-                }
-            }
-
-            // Save
-            await _dbContext.SaveChangesAsync();
 
             // Return to rules view
             return RedirectToAction("Index", "Rules");
         }
 
-        [HttpPost]
+        [HttpPost("/Rules/Delete")]
         public async Task<IActionResult> DeleteAsync([FromForm]string id)
         {
             // Check parameter
@@ -278,41 +172,19 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find the rule
-            NotificationRule rule = _dbContext.Rules
-                                    .Include(r => r.Notifiers)
-                                    .Include(r => r.Recipients).ThenInclude(r => r.User)
-                                    .Include(r => r.Recipients).ThenInclude(r => r.Role)
-                                    .FirstOrDefault(r => r.Id.Equals(id));
-            if (rule == null)
+            try
             {
-                return NotFound();
+                // Try to delete rule
+                await _notificationRulesManager.DeleteRuleAsync(id, User);
             }
-
-            // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded
-                && rule.Owner != await _userManager.GetUserAsync(User))
+            catch (KeyNotFoundException kex)
             {
-                // Not coordinator nor owner
-                return Forbid();
+                return NotFound(kex.Message);
             }
-
-            // First remove all recipients/notifiers (because of foreign-key-constraint)
-            foreach (var recipient in rule.Recipients)
+            catch (InvalidOperationException oex)
             {
-                recipient.User = null;
-                recipient.Role = null;
+                Forbid(oex.Message);
             }
-            await _dbContext.SaveChangesAsync();
-
-            rule.Recipients.Clear();
-            rule.Notifiers.Clear();
-            rule.Owner = null;
-            await _dbContext.SaveChangesAsync();
-
-            // Then remove the rule
-            _dbContext.Rules.Remove(rule);
-            await _dbContext.SaveChangesAsync();
 
             // Return to rules view
             return RedirectToAction("Index", "Rules");
@@ -327,26 +199,19 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find the rule
-            NotificationRule rule = _dbContext.Rules.FirstOrDefault(r => r.Id.Equals(id));
-            if (rule == null)
+            try
             {
-                return NotFound();
+                // Try deactivate rule
+                await _notificationRulesManager.DeactivateRuleAsync(id, User);
             }
-
-            // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded
-                && rule.Owner != await _userManager.GetUserAsync(User))
+            catch (KeyNotFoundException kex)
             {
-                // Not coordinator nor owner
-                return Forbid();
+                return NotFound(kex.Message);
             }
-
-            // Deactivate rule
-            rule.IsActive = false;
-
-            // Save
-            await _dbContext.SaveChangesAsync();
+            catch (InvalidOperationException oex)
+            {
+                return Forbid(oex.Message);
+            }
 
             // Reload rules view
             return RedirectToAction("Index", "Rules");
@@ -361,26 +226,19 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find the rule
-            NotificationRule rule = _dbContext.Rules.FirstOrDefault(r => r.Id.Equals(id));
-            if (rule == null)
+            try
             {
-                return NotFound();
+                // Try activate rule
+                await _notificationRulesManager.ActivateRuleAsync(id, User);
             }
-
-            // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded
-                && rule.Owner != await _userManager.GetUserAsync(User))
+            catch (KeyNotFoundException kex)
             {
-                // Not coordinator nor owner
-                return Forbid();
+                return NotFound(kex.Message);
             }
-
-            // Deactivate rule
-            rule.IsActive = true;
-
-            // Save
-            await _dbContext.SaveChangesAsync();
+            catch (InvalidOperationException oex)
+            {
+                return Forbid(oex.Message);
+            }
 
             // Reload rules view
             return RedirectToAction("Index", "Rules");

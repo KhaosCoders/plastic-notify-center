@@ -14,9 +14,17 @@ namespace PlasticNotifyCenter.Authorization
         /// </summary>
         /// <param name="user">ClaimsPrincipal instance</param>
         /// <param name="authorizationService">AuthorizationService to use for authentication</param>
-        /// <returns></returns>
         public static async Task<bool> IsAdminAsync(this ClaimsPrincipal user, IAuthorizationService authorizationService) =>
             (await authorizationService.AuthorizeAsync(user, null, RoleRequirements.AdminRoleRequirement)).Succeeded;
+
+
+        /// <summary>
+        /// Returns true when the user is a coordinator or administrator
+        /// </summary>
+        /// <param name="user">ClaimsPrincipal instance</param>
+        /// <param name="authorizationService">AuthorizationService to use for authentication</param>
+        public static async Task<bool> IsCoordinatorAsync(this ClaimsPrincipal user, IAuthorizationService authorizationService) =>
+            (await authorizationService.AuthorizeAsync(user, null, RoleRequirements.CoordinatorRoleRequirement)).Succeeded;
 
     }
 }
