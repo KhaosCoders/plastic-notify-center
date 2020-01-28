@@ -1,4 +1,6 @@
+using System;
 using Microsoft.AspNetCore.Identity;
+using PlasticNotifyCenter.Models;
 
 namespace PlasticNotifyCenter.Data.Identity
 {
@@ -13,22 +15,68 @@ namespace PlasticNotifyCenter.Data.Identity
         public Origins Origin { get; set; } = Origins.Local;
 
         /// <summary>
+        /// Gets or sets a unique ID comming from LDAP to identify this role (group)
+        /// </summary>
+        public string LdapGuid { get; set; }
+
+        /// <summary>
         /// Gets or sets whether the role is a build-in role
         /// Those can't be deleted
         /// </summary>
         public bool IsBuildIn { get; set; }
 
         /// <summary>
+        /// Gets or sets whether the role (group) was deleted
+        /// </summary>
+        public bool IsDeleted { get; private set; }
+
+        /// <summary>
         /// Creates a new instance
         /// </summary>
-        public Role() : base()
+        public Role()
+            : base()
         { }
 
         /// <summary>
         /// Creates a new instance
         /// </summary>
         /// <param name="name">Name of the role</param>
-        public Role(string name) : base(name)
+        public Role(string name)
+            : base(name)
         { }
+
+        #region LDAP related
+
+        /// <summary>
+        /// Creates a new role based on information from LDAP
+        /// </summary>
+        /// <param name="ldapGroup">LDAP group information</param>
+        public static Role FromLDAP(LdapGroup ldapGroup) =>
+            new Role(ldapGroup.Name)
+            {
+                Origin = Origins.LDAP,
+                LdapGuid = ldapGroup.LdapGuid
+            };
+
+        /// <summary>
+        /// Marks a role (group) as deactivated/deleted
+        /// </summary>
+        internal void Deactivate()
+        {
+            IsDeleted = true;
+            Name = $"{Name}-{DateTime.Now.ToShortDateString()}";
+        }
+
+        /// <summary>
+        /// Reactivates a role (group)
+        /// </summary>
+        /// <param name="ldapGroup">LDAP group information</param>
+        internal void Reactivate(LdapGroup ldapGroup)
+        {
+            IsDeleted = false;
+            Name = ldapGroup.Name;
+        }
+
+        #endregion
     }
 }

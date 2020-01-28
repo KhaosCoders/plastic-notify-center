@@ -60,6 +60,16 @@ namespace PlasticNotifyCenter.Data
         public string NotificationBody { get; set; }
 
         /// <summary>
+        /// Gets or sets the type of text forming the message body
+        /// </summary>
+        public MessageBodyType NotificationBodyType { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the global message layout should be applied
+        /// </summary>
+        public bool UseGlobalMessageTemplate { get; set; }
+
+        /// <summary>
         /// Gets or sets a list of tags, separated by kommas
         /// </summary>
         public string NotificationTags { get; set; }
@@ -97,6 +107,8 @@ namespace PlasticNotifyCenter.Data
             : this()
         {
             DisplayName = displayName;
+            NotificationBodyType = MessageBodyType.HTML;
+            UseGlobalMessageTemplate = true;
         }
 
         /// <summary>

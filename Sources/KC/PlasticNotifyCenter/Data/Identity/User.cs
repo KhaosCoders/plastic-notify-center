@@ -1,4 +1,7 @@
+using System;
 using Microsoft.AspNetCore.Identity;
+using PlasticNotifyCenter.Models;
+using PlasticNotifyCenter.Utils;
 
 namespace PlasticNotifyCenter.Data.Identity
 {
@@ -13,6 +16,11 @@ namespace PlasticNotifyCenter.Data.Identity
         public Origins Origin { get; set; } = Origins.Local;
 
         /// <summary>
+        /// Gets or sets a unique ID comming from LDAP to identify this user
+        /// </summary>
+        public string LdapGuid { get; set; }
+
+        /// <summary>
         /// Creates a new instance
         /// </summary>
         public User() : base()
@@ -24,5 +32,52 @@ namespace PlasticNotifyCenter.Data.Identity
         /// <param name="username">Username</param>
         public User(string username) : base(username)
         { }
+
+        #region LDAP related
+
+        /// <summary>
+        /// Creates a new user based on information from LDAP
+        /// </summary>
+        /// <param name="ldapUser">LDAP user information</param>
+        public static User FromLDAP(LdapUser ldapUser) =>
+            new User(ldapUser.UserName)
+            {
+                Origin = Origins.LDAP,
+                LdapGuid = ldapUser.LdapGuid,
+                Email = ldapUser.Email,
+                EmailConfirmed = true
+            };
+
+        /// <summary>
+        /// Locks out a user and annonymizes his data
+        /// </summary>
+        internal void Deactivate()
+        {
+            // Lockout the user
+            LockoutEnabled = true;
+            LockoutEnd = DateTime.Now + TimeSpan.FromDays(365 * 200);
+            // Annonymize the user
+            UserName = GuidHelper.Unwrap(LdapGuid);
+            Email = string.Empty;
+            PhoneNumber = string.Empty;
+            EmailConfirmed = false;
+        }
+
+        /// <summary>
+        /// Reactivates a user
+        /// </summary>
+        /// <param name="user">LDAP user information</param>
+        internal void Reactivate(LdapUser user)
+        {
+            // Unlock user
+            LockoutEnabled = false;
+            LockoutEnd = DateTime.Now;
+            // Hydrate user data
+            UserName = user.UserName;
+            Email = user.Email;
+            EmailConfirmed = true;
+        }
+
+        #endregion
     }
 }

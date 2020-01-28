@@ -1,9 +1,9 @@
 using System.Linq;
 using System.DirectoryServices;
-using System.DirectoryServices.ActiveDirectory;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using PlasticNotifyCenter.Models;
+using PlasticNotifyCenter.Data;
 
 namespace PlasticNotifyCenter.Services
 {
@@ -25,21 +25,20 @@ namespace PlasticNotifyCenter.Services
         /// <summary>
         /// Gets all users found via LDAP
         /// </summary>
-        /// <param name="ldapStr">LDAP connection string</param>
-        /// <param name="baseDN">Base DN</param>
-        /// <param name="userDN">Additional group DN</param>
-        /// <param name="filter">Group filter</param>
-        /// <param name="userNameAttr">Name of user name attribute</param>
-        /// <param name="userEmailAttr">Name of email address attribute</param>
-        public LdapUser[] GetUsers(string ldapStr, string baseDN, string userDN, string filter, string userNameAttr, string userEmailAttr)
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public LdapUser[] GetUsers(LdapSettings ldapConfig)
         {
-            using DirectoryEntry entry = Connect($"{ldapStr}/{userDN},{baseDN}");
             List<LdapUser> users = new List<LdapUser>();
 
-            using DirectorySearcher searcher = new DirectorySearcher(entry);
-            searcher.Filter = filter;
+            // Connect to user dicectory via LDAP
+            using DirectoryEntry entry = Connect($"{GetLdapStr(ldapConfig)}/{ldapConfig.LdapUserDN},{ldapConfig.LdapBaseDN}");
 
-            foreach(SearchResult result in searcher.FindAll())
+            // Apply search filter
+            using DirectorySearcher searcher = new DirectorySearcher(entry);
+            searcher.Filter = ldapConfig.LdapUserFilter;
+
+            // Return all found users
+            foreach (SearchResult result in searcher.FindAll())
             {
                 using DirectoryEntry userEntry = result?.GetDirectoryEntry();
                 if (userEntry == null)
@@ -47,18 +46,21 @@ namespace PlasticNotifyCenter.Services
                     continue;
                 }
 
-                string userName = userEntry.Properties[userNameAttr]?.Value?.ToString();
-                string email = userEntry.Properties[userEmailAttr]?.Value?.ToString();
+                // Obtain attribute values
+                string userName = userEntry.Properties[ldapConfig.LdapUserNameAttr]?.Value?.ToString();
+                string guid = userEntry.Properties[ldapConfig.LdapUserGuidAttr]?.Value?.ToString();
+                string email = userEntry.Properties[ldapConfig.LdapUserEmailAttr]?.Value?.ToString();
 
-                if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(email))
+                // Check values for completeness
+                if (string.IsNullOrWhiteSpace(userName)
+                    || string.IsNullOrWhiteSpace(email)
+                    || string.IsNullOrWhiteSpace(guid))
                 {
                     continue;
                 }
 
-                users.Add(new LdapUser(){
-                    UserName = userName,
-                    Email = email
-                });
+                // Add new user to result list
+                users.Add(new LdapUser(guid, userName, email));
             }
 
             return users.ToArray();
@@ -67,22 +69,21 @@ namespace PlasticNotifyCenter.Services
         /// <summary>
         /// Gets all groups found via LDAP
         /// </summary>
-        /// <param name="ldapStr">LDAP connection string</param>
-        /// <param name="baseDN">Base DN</param>
-        /// <param name="groupDN">Additional group DN</param>
-        /// <param name="filter">Group filter</param>
-        /// <param name="groupNameAttr">Name of group name attribute</param>
-        /// <param name="memberAttr">Name of group members attribute</param>
-        /// <param name="userNameAttr">Name of user name attribute</param>
-        public LdapGroup[] GetGroups(string ldapStr, string baseDN, string groupDN, string filter, string groupNameAttr, string memberAttr, string userNameAttr)
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public LdapGroup[] GetGroups(LdapSettings ldapConfig)
         {
-            using DirectoryEntry entry = Connect($"{ldapStr}/{groupDN},{baseDN}");
             List<LdapGroup> groups = new List<LdapGroup>();
 
-            using DirectorySearcher searcher = new DirectorySearcher(entry);
-            searcher.Filter = filter;
+            // Connect to group directory via LDAP
+            string ldapStr = GetLdapStr(ldapConfig);
+            using DirectoryEntry entry = Connect($"{ldapStr}/{ldapConfig.LdapGroupDN},{ldapConfig.LdapBaseDN}");
 
-            foreach(SearchResult result in searcher.FindAll())
+            // Apply search filter
+            using DirectorySearcher searcher = new DirectorySearcher(entry);
+            searcher.Filter = ldapConfig.LdapGroupFilter;
+
+            // Return all found groups
+            foreach (SearchResult result in searcher.FindAll())
             {
                 using DirectoryEntry groupEntry = result?.GetDirectoryEntry();
                 if (groupEntry == null)
@@ -90,44 +91,51 @@ namespace PlasticNotifyCenter.Services
                     continue;
                 }
 
-                string groupName = groupEntry.Properties[groupNameAttr]?.Value?.ToString();
-                if (string.IsNullOrWhiteSpace(groupName))
+                // Obtain attributes
+                string guid = groupEntry.Properties[ldapConfig.LdapGroupGuidAttr]?.Value?.ToString();
+                string groupName = groupEntry.Properties[ldapConfig.LdapGroupNameAttr]?.Value?.ToString();
+                if (string.IsNullOrWhiteSpace(guid)
+                    || string.IsNullOrWhiteSpace(groupName))
                 {
                     continue;
                 }
 
-                var group = new LdapGroup(){
-                    Name = groupName
-                };
+                var group = new LdapGroup(guid, groupName);
 
                 // Get all members
-                object[] members = groupEntry.Properties[memberAttr]?.Value as object[];
+                object[] members = groupEntry.Properties[ldapConfig.LdapMember]?.Value as object[];
                 if (members == null)
                 {
                     continue;
                 }
-                foreach(object memberObj in members)
+                // Add all found member to group
+                foreach (object memberObj in members)
                 {
                     string userDN = memberObj.ToString();
-                    if (string.IsNullOrWhiteSpace(userDN) || !userDN.Contains(baseDN))
+                    if (string.IsNullOrWhiteSpace(userDN) || !userDN.Contains(ldapConfig.LdapBaseDN))
                     {
+                        // Skip users not part of the LDAP service
                         continue;
                     }
 
+                    // Get user entry
                     using DirectoryEntry user = Connect($"{ldapStr}/{userDN}");
                     if (user == null)
                     {
                         continue;
                     }
 
-                    string userName = user.Properties[userNameAttr]?.Value?.ToString();
-                    if (string.IsNullOrWhiteSpace(userName))
+                    string userGuid = user.Properties[ldapConfig.LdapUserGuidAttr]?.Value?.ToString();
+                    string userName = user.Properties[ldapConfig.LdapUserNameAttr]?.Value?.ToString();
+                    if (string.IsNullOrWhiteSpace(userGuid)
+                        || string.IsNullOrWhiteSpace(userName))
                     {
+                        // Skip users without GUID or name
                         continue;
                     }
-                    
-                    _logger.LogDebug("{0} is in {1}", userName, groupName);
-                    group.Users.Add(userName);
+
+                    _logger.LogDebug("{0} (Guid: {1}) is in group: {2}", userName, userGuid, groupName);
+                    group.UserGuids.Add(userGuid);
                 }
 
                 groups.Add(group);
@@ -137,17 +145,15 @@ namespace PlasticNotifyCenter.Services
         }
 
         #endregion
-        
+
         #region Connection
 
         /// <summary>
         /// Returns a LDAP connection string
         /// </summary>
-        /// <param name="useSSL">If true, a secure channel is used</param>
-        /// <param name="hostname">Host name of the domain controller</param>
-        /// <param name="port">Port to use</param>
-        public string GetLdapStr(bool useSSL, string hostname, int port) =>
-            $"{(useSSL ? "LDAPS" : "LDAP")}://{hostname}{(port > 0 ? $":{port}" : "")}";
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public string GetLdapStr(LdapSettings ldapConfig) =>
+            $"{(ldapConfig.LdapDcSSL ? "LDAPS" : "LDAP")}://{ldapConfig.LdapDcHost}{(ldapConfig.LdapDcPort > 0 ? $":{ldapConfig.LdapDcPort}" : "")}";
 
         /// <summary>
         /// Returns a base entry for the provided connection string
@@ -176,27 +182,21 @@ namespace PlasticNotifyCenter.Services
         /// <summary>
         /// Returns the number of users found
         /// </summary>
-        /// <param name="ldapStr">LDAP connection string</param>
-        /// <param name="baseDN">Base DN</param>
-        /// <param name="userDN">Additional user DN</param>
-        /// <param name="filter">User filter</param>
-        public int GetUserCount(string ldapStr, string baseDN, string userDN, string filter)
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public int GetUserCount(LdapSettings ldapConfig)
         {
-            using DirectoryEntry entry = Connect($"{ldapStr}/{userDN},{baseDN}");
-            return GetChildCount(entry, filter);
+            using DirectoryEntry entry = Connect($"{GetLdapStr(ldapConfig)}/{ldapConfig.LdapUserDN},{ldapConfig.LdapBaseDN}");
+            return GetChildCount(entry, ldapConfig.LdapUserFilter);
         }
 
         /// <summary>
         /// Returns the number of groups found
         /// </summary>
-        /// <param name="ldapStr">LDAP connection string</param>
-        /// <param name="baseDN">Base DN</param>
-        /// <param name="groupDN">Additional group DN</param>
-        /// <param name="filter">Group filter</param>
-        public int GetGroupCount(string ldapStr, string baseDN, string groupDN, string filter)
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public int GetGroupCount(LdapSettings ldapConfig)
         {
-            using DirectoryEntry entry = Connect($"{ldapStr}/{groupDN},{baseDN}");
-            return GetChildCount(entry, filter);
+            using DirectoryEntry entry = Connect($"{GetLdapStr(ldapConfig)}/{ldapConfig.LdapGroupDN},{ldapConfig.LdapBaseDN}");
+            return GetChildCount(entry, ldapConfig.LdapGroupFilter);
         }
 
         /// <summary>
@@ -204,42 +204,34 @@ namespace PlasticNotifyCenter.Services
         /// </summary>
         /// <param name="entry">Entry</param>
         /// <param name="filter">Filter to apply</param>
-        /// <returns></returns>
         private static int GetChildCount(DirectoryEntry entry, string filter)
         {
             using DirectorySearcher searcher = new DirectorySearcher(entry);
             searcher.Filter = filter;
             return searcher.FindAll().Count;
         }
-        
+
         /// <summary>
         /// Trys to get the provided attribues on the first found user entry
         /// </summary>
-        /// <param name="ldapStr">LDAP connection string</param>
-        /// <param name="baseDN">Base DN</param>
-        /// <param name="userDN">Additional group DN</param>
-        /// <param name="filter">Group filter</param>
-        /// <param name="userNameAttr">Name of user name attribute</param>
-        /// <param name="userEmailAttr">Name of email address attribute</param>
-        public bool TestUserAttributes(string ldapStr, string baseDN, string userDN, string filter, string userNameAttr, string userEmailAttr)
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public bool TestUserAttributes(LdapSettings ldapConfig)
         {
-            using DirectoryEntry entry = Connect($"{ldapStr}/{userDN},{baseDN}");
-            return TestAttributes(entry, filter, userNameAttr, userEmailAttr);
+            using DirectoryEntry entry = Connect($"{GetLdapStr(ldapConfig)}/{ldapConfig.LdapUserDN},{ldapConfig.LdapBaseDN}");
+            return TestAttributes(entry, ldapConfig.LdapUserFilter,
+                                         ldapConfig.LdapUserGuidAttr,
+                                         ldapConfig.LdapUserNameAttr,
+                                         ldapConfig.LdapUserEmailAttr);
         }
 
         /// <summary>
         /// Trys to get the provided attribues on the first found group entry
         /// </summary>
-        /// <param name="ldapStr">LDAP connection string</param>
-        /// <param name="baseDN">Base DN</param>
-        /// <param name="groupDN">Additional group DN</param>
-        /// <param name="filter">Group filter</param>
-        /// <param name="groupNameAttr">Name of group name attribute</param>
-        /// <param name="memberAttr">Name of group members attribute</param>
-        public bool TestGroupAttrbutes(string ldapStr, string baseDN, string groupDN, string filter, string groupNameAttr, string memberAttr)
+        /// <param name="ldapConfig">LDAP configuration</param>
+        public bool TestGroupAttrbutes(LdapSettings ldapConfig)
         {
-            using DirectoryEntry entry = Connect($"{ldapStr}/{groupDN},{baseDN}");
-            return TestAttributes(entry, filter, groupNameAttr, memberAttr);
+            using DirectoryEntry entry = Connect($"{GetLdapStr(ldapConfig)}/{ldapConfig.LdapGroupDN},{ldapConfig.LdapBaseDN}");
+            return TestAttributes(entry, ldapConfig.LdapGroupFilter, ldapConfig.LdapGroupGuidAttr, ldapConfig.LdapGroupNameAttr, ldapConfig.LdapMember);
         }
 
         /// <summary>
@@ -248,7 +240,6 @@ namespace PlasticNotifyCenter.Services
         /// <param name="entry">Root entry</param>
         /// <param name="filter">Filter to apply</param>
         /// <param name="attributes">List of attribute names</param>
-        /// <returns></returns>
         private bool TestAttributes(DirectoryEntry entry, string filter, params string[] attributes)
         {
             using DirectorySearcher searcher = new DirectorySearcher(entry);
@@ -269,7 +260,7 @@ namespace PlasticNotifyCenter.Services
             }
 
             // Try to get all the attributes
-            foreach(string attr in attributes)
+            foreach (string attr in attributes)
             {
                 string value = user.Properties[attr].Value.ToString();
                 _logger.LogDebug("Testing LDAP Attribute '{0}' value is: {1}", attr, value);
@@ -282,7 +273,6 @@ namespace PlasticNotifyCenter.Services
 
             return true;
         }
-
 
         #endregion
     }
