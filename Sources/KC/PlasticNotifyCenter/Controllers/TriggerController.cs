@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Controllers.Api;
 using PlasticNotifyCenter.Data;
+using PlasticNotifyCenter.Data.Managers;
 using PlasticNotifyCenter.Filters;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Notifiers;
@@ -24,17 +25,17 @@ namespace PlasticNotifyCenter.Controllers
     {
         #region Dependencies
 
-        private readonly PncDbContext _dbContext;
         private readonly ILogger<TriggerController> _logger;
         private readonly INotificationQueue _notificationQueue;
+        private readonly ITriggerHistoryManager _triggerHistoryManager;
 
-        public TriggerController(PncDbContext dbContect,
-                                ILogger<TriggerController> logger,
-                                INotificationQueue notificationQueue)
+        public TriggerController(ILogger<TriggerController> logger,
+                                INotificationQueue notificationQueue,
+                                ITriggerHistoryManager triggerHistoryManager)
         {
-            this._dbContext = dbContect;
-            this._logger = logger;
-            this._notificationQueue = notificationQueue;
+            _logger = logger;
+            _notificationQueue = notificationQueue;
+            _triggerHistoryManager = triggerHistoryManager;
         }
 
         #endregion
@@ -104,10 +105,7 @@ namespace PlasticNotifyCenter.Controllers
             }
 
             // Get list of variables for last trigger call
-            var vars = _dbContext.TriggerVariables
-                                .Where(v => v.Trigger == type)
-                                .OrderBy(v => v.Variable)
-                                .ToArray();
+            var vars = _triggerHistoryManager.GetEnvironmentVariables(type).ToArray();
             if ((vars?.Length ?? 0) == 0)
             {
                 return Ok(new FailureResponse("No variables recorded!"));
@@ -115,10 +113,7 @@ namespace PlasticNotifyCenter.Controllers
             var varDictionary = vars.ToDictionary(v => v.Variable, v => v.Value);
 
             // Special INPUT var
-            var triggerHistory = _dbContext.TriggerHistory
-                                            .Where(h => h.Trigger == type)
-                                            .OrderByDescending(h => h.TimeStamp)
-                                            .FirstOrDefault();
+            var triggerHistory = _triggerHistoryManager.GetLatestTriggerHistory(type);
             if (!string.IsNullOrWhiteSpace(triggerHistory?.Input))
             {
                 varDictionary.Add("Input (Type: string[])", triggerHistory.Input);
