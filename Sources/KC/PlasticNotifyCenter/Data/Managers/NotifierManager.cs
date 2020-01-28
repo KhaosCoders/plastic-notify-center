@@ -182,7 +182,7 @@ namespace PlasticNotifyCenter.Data.Managers
             _dbContext.Notifiers.Add(notifier);
 
             //Save
-            _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync();
         }
 
         #endregion
