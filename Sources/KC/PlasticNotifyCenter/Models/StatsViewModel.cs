@@ -19,6 +19,19 @@ namespace PlasticNotifyCenter.Models
         /// Gets or sets a list of stats abount send notifications
         /// </summary>
         public NotificationStats[] NotificationStats { get; set; }
+
+        /// <summary>
+        /// Creates a new instance
+        /// </summary>
+        /// <param name="triggerStats">List of stats for trigger calls</param>
+        /// <param name="ruleCount">Number or rules</param>
+        /// <param name="notificationStats">List of stats for notifier messages</param>
+        public StatsViewModel(TriggerStats[] triggerStats, int ruleCount, NotificationStats[] notificationStats)
+        {
+            TriggerStats = triggerStats;
+            RuleCount = ruleCount;
+            NotificationStats = notificationStats;
+        }
     }
 
     /// <summary>

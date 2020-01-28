@@ -3,9 +3,8 @@ using System.Diagnostics;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using PlasticNotifyCenter.Data;
+using PlasticNotifyCenter.Data.Managers;
 using PlasticNotifyCenter.Models;
-using PlasticNotifyCenter.Services;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -17,53 +16,39 @@ namespace PlasticNotifyCenter.Controllers
         #region Dependencies
 
         private readonly ILogger<HomeController> _logger;
-        private readonly PncDbContext _dbContext;
-        private readonly INotifierDefinitionService _notifierIconService;
+        private readonly ITriggerHistoryManager _triggerHistoryManager;
+        private readonly INotificationRulesManager _notificationRulesManager;
+        private readonly INotificationHistoryManager _notificationHistoryManager;
 
-        public HomeController(ILogger<HomeController> logger, PncDbContext dbContect, INotifierDefinitionService notifierIconService)
+        public HomeController(ILogger<HomeController> logger,
+                            ITriggerHistoryManager triggerHistoryManager,
+                            INotificationRulesManager notificationRulesManager,
+                            INotificationHistoryManager notificationHistoryManager)
         {
             _logger = logger;
-            _dbContext = dbContect;
-            _notifierIconService = notifierIconService;
+            _triggerHistoryManager = triggerHistoryManager;
+            _notificationRulesManager = notificationRulesManager;
+            _notificationHistoryManager = notificationHistoryManager;
         }
 
         #endregion
 
+        #region Start page (Index)
+
+        [HttpGet("/Index")]
         public IActionResult Index()
         {
-            StatsViewModel model = new StatsViewModel();
-
-            // Trigger stats
-            model.TriggerStats = _dbContext.TriggerHistory
-                                           .GroupBy(o => o.Trigger)
-                                           .Select(g => new TriggerStats()
-                                           {
-                                               Name = g.Key,
-                                               Count = g.Count()
-                                           })
-                                           .ToArray();
-            // Rule stats
-            model.RuleCount = _dbContext.Rules.Count();
-
-            // Notifier Stats
-            model.NotificationStats = _dbContext.NotificationHistory
-                                            .GroupBy(o => o.NotifierName)
-                                            .Select(g => new NotificationStats()
-                                            {
-                                                Notifier = g.Key,
-                                                Icon = _notifierIconService.GetIcon(g.Key),
-                                                SuccessCount = g.Sum(e => e.SuccessCount),
-                                                FailedCount = g.Sum(e => e.FailedCount)
-                                            })
-                                            .ToArray();
-
-            return View(model);
+            // Show view
+            return View(new StatsViewModel(
+                _triggerHistoryManager.GetTriggerStats().ToArray(),
+                _notificationRulesManager.GetRuleCount(),
+                _notificationHistoryManager.GetNotificationStats().ToArray()
+            ));
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        #endregion
+
+        #region Error page
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
@@ -71,5 +56,7 @@ namespace PlasticNotifyCenter.Controllers
             // Show an error page with information about the original request
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        #endregion
     }
 }

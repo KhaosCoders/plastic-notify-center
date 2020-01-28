@@ -4,13 +4,32 @@ using PlasticNotifyCenter.Data.Identity;
 
 namespace PlasticNotifyCenter.Data.Managers
 {
+    /// <summary>
+    /// Manages notification rules
+    /// </summary>
     public interface INotificationRulesManager
     {
+        /// <summary>
+        /// Removes a user from all rules where he is a recipient
+        /// </summary>
+        /// <param name="user">User to remove</param>
         Task DeleteUserRecipientAsync(User user);
 
+        /// <summary>
+        /// Removes a role from all rules where it is a recipient
+        /// </summary>
+        /// <param name="role">Role to remove</param>
         Task DeleteRoleRecipientAsync(Role role);
+
+        /// <summary>
+        /// Returns the number or defined rules
+        /// </summary>
+        int GetRuleCount();
     }
 
+    /// <summary>
+    /// Implementation of INotificationRulesManager
+    /// </summary>
     public class NotificationRulesManager : INotificationRulesManager
     {
         #region Dependencies
@@ -69,6 +88,16 @@ namespace PlasticNotifyCenter.Data.Managers
             rules.ForEach(rule => rule.Rule.Recipients.Remove(rule.Recipient));
             await _dbContext.SaveChangesAsync();
         }
+
+        #endregion
+
+        #region Rule count
+
+        /// <summary>
+        /// Returns the number or defined rules
+        /// </summary>
+        public int GetRuleCount() =>
+            _dbContext.Rules.Count();
 
         #endregion
 
