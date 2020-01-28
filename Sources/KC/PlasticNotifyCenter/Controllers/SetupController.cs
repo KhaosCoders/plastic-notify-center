@@ -16,6 +16,7 @@ using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data.Identity;
 using PlasticNotifyCenter.Utils;
 using System.Security.Authentication;
+using PlasticNotifyCenter.Data.Managers;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -28,24 +29,30 @@ namespace PlasticNotifyCenter.Controllers
     {
         #region Dependencies
 
-        private readonly PncDbContext _dbContext;
         private readonly ILogger<SetupController> _logger;
         private readonly IMailService _mailService;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
+        private readonly IAppSettingsManager _appSettingsManager;
+        private readonly ITriggerHistoryManager _triggerHistoryManager;
+        private readonly INotifierManager _notifierManager;
 
 
         public SetupController(ILogger<SetupController> logger,
-                               PncDbContext dbContect,
                                IMailService mailService,
                                UserManager<User> userManager,
-                               RoleManager<Role> roleManager)
+                               RoleManager<Role> roleManager,
+                               IAppSettingsManager appSettingsManager,
+                               ITriggerHistoryManager triggerHistoryManager,
+                               INotifierManager notifierManager)
         {
-            _dbContext = dbContect;
             _logger = logger;
             _mailService = mailService;
             _userManager = userManager;
             _roleManager = roleManager;
+            _appSettingsManager = appSettingsManager;
+            _triggerHistoryManager = triggerHistoryManager;
+            _notifierManager = notifierManager;
         }
 
         #endregion
@@ -55,7 +62,7 @@ namespace PlasticNotifyCenter.Controllers
         public IActionResult Index()
         {
             // Block request when setup was completed before
-            if (_dbContext.AppSettings.FirstOrDefault() != null)
+            if (_appSettingsManager.AppSettings != null)
             {
                 return BadRequest();
             }
@@ -115,15 +122,10 @@ namespace PlasticNotifyCenter.Controllers
         public async Task<IActionResult> TriggerCountsAsync()
         {
             // Group trigger call history by type and count them
-            var triggerCallCount = _dbContext.TriggerHistory
-                                        .GroupBy((entry) => entry.Trigger)
-                                        .Select((group) => new { Trigger = group.Key, Count = group.Count() })
-                                        .ToArray();
+            var triggerCallCount = _triggerHistoryManager.GetTriggerCallCount().ToArray();
 
             // Convert result to Json
-            string message = await JsonHelper.StringifyAsync(triggerCallCount);
-
-            return Ok(message);
+            return Ok(await JsonHelper.StringifyAsync(triggerCallCount));
         }
 
         #endregion
@@ -188,7 +190,7 @@ namespace PlasticNotifyCenter.Controllers
                 // Failed with exception
                 return Ok(new ErrorRespose(exSmtp));
             }
-            catch(AuthenticationException exAuth)
+            catch (AuthenticationException exAuth)
             {
                 // Failed with exception
                 return Ok(new ErrorRespose(exAuth));
@@ -203,7 +205,7 @@ namespace PlasticNotifyCenter.Controllers
         public async Task<IActionResult> CompleteSetupAsync()
         {
             // Block request when setup was completed before
-            if (_dbContext.AppSettings.FirstOrDefault() != null)
+            if (_appSettingsManager.AppSettings != null)
             {
                 return BadRequest();
             }
@@ -249,13 +251,10 @@ namespace PlasticNotifyCenter.Controllers
             await _userManager.AddToRoleAsync(adminUser, Roles.UserRole);
 
             // Store basic app settings
-            _dbContext.AppSettings.Add(new AppSettings(config.BaseUrl));
+            await _appSettingsManager.SaveSettingsAsync(config.BaseUrl, true);
 
             // Store SMTP notifier
-            _dbContext.Notifiers.Add(SmtpNotifierData.CreateFrom(config.Smtp));
-
-            // Save
-            await _dbContext.SaveChangesAsync();
+            await _notifierManager.AddNotifierAsync(SmtpNotifierData.CreateFrom(config.Smtp));
 
             return Ok(new SuccessResponse());
         }

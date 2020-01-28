@@ -75,7 +75,7 @@ namespace PlasticNotifyCenter.Controllers
             }
 
             // Change settings
-            await _appSettingsManager.ChangeSettingsAsync(
+            await _appSettingsManager.SaveSettingsAsync(
                 baseUrl,
                 allowRegistration?.Equals("on", System.StringComparison.CurrentCultureIgnoreCase) ?? false);
 

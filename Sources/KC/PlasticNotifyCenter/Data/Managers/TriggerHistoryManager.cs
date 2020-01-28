@@ -30,6 +30,11 @@ namespace PlasticNotifyCenter.Data.Managers
         /// </summary>
         /// <param name="trigger">Name of trigger type</param>
         TriggerHistory GetLatestTriggerHistory(string trigger);
+
+        /// <summary>
+        /// Returns a list or triggers with their invocation counts
+        /// </summary>
+        IEnumerable<TriggerCallInfo> GetTriggerCallCount();
     }
 
     /// <summary>
@@ -98,5 +103,22 @@ namespace PlasticNotifyCenter.Data.Managers
 
         #endregion
 
+        #region Call count
+
+        /// <summary>
+        /// Returns a list or triggers with their invocation counts
+        /// </summary>
+        public IEnumerable<TriggerCallInfo> GetTriggerCallCount() =>
+            _dbContext.TriggerHistory
+                .GroupBy((entry) => entry.Trigger)
+                .Select((group) => new TriggerCallInfo() { Trigger = group.Key, Count = group.Count() });
+
+        #endregion
+    }
+
+    public class TriggerCallInfo
+    {
+        public string Trigger { get; set; }
+        public int Count { get; set; }
     }
 }

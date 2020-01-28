@@ -46,6 +46,12 @@ namespace PlasticNotifyCenter.Data.Managers
         /// </summary>
         /// <param name="id">ID of notifier to delete</param>
         Task DeleteNotifierByIdAsync(string id);
+
+        /// <summary>
+        /// Adds a new notifier
+        /// </summary>
+        /// <param name="notifier">Notifier data to add</param>
+        Task AddNotifierAsync(BaseNotifierData notifier);
     }
 
     /// <summary>
@@ -163,6 +169,20 @@ namespace PlasticNotifyCenter.Data.Managers
             await _dbContext.SaveChangesAsync();
 
             return notifier.Id;
+        }
+
+
+        /// <summary>
+        /// Adds a new notifier
+        /// </summary>
+        /// <param name="notifier">Notifier data to add</param>
+        public async Task AddNotifierAsync(BaseNotifierData notifier)
+        {
+            // Add notifier
+            _dbContext.Notifiers.Add(notifier);
+
+            //Save
+            _dbContext.SaveChangesAsync();
         }
 
         #endregion

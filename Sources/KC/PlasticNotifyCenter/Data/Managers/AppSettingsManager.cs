@@ -19,7 +19,7 @@ namespace PlasticNotifyCenter.Data.Managers
         /// </summary>
         /// <param name="baseUrl">Web page base URL</param>
         /// <param name="allowRegistration">Allow user registration</param>
-        Task<int> ChangeSettingsAsync(string baseUrl, bool allowRegistration);
+        Task<int> SaveSettingsAsync(string baseUrl, bool allowRegistration);
 
         /// <summary>
         /// Saves new LDAP settings
@@ -59,10 +59,16 @@ namespace PlasticNotifyCenter.Data.Managers
         /// </summary>
         /// <param name="baseUrl">Web page base URL</param>
         /// <param name="allowRegistration">Allow user registration</param>
-        public async Task<int> ChangeSettingsAsync(string baseUrl, bool allowRegistration)
+        public async Task<int> SaveSettingsAsync(string baseUrl, bool allowRegistration)
         {
             // AppSettings has only one record
             var appSettings = _dbContext.AppSettings.First();
+            if (appSettings == null)
+            {
+                // Create first record as part of page setup
+                appSettings = new AppSettings(baseUrl);
+                _dbContext.AppSettings.Add(appSettings);
+            }
 
             // Update record
             appSettings.BaseUrl = baseUrl;
