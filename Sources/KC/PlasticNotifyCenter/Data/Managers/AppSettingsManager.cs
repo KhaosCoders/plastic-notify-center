@@ -15,6 +15,11 @@ namespace PlasticNotifyCenter.Data.Managers
         AppSettings AppSettings { get; }
 
         /// <summary>
+        /// Gets whether users can register a new account manually
+        /// </summary>
+        bool IsRegisterAllowed { get; }
+
+        /// <summary>
         /// Saves new application settings
         /// </summary>
         /// <param name="baseUrl">Web page base URL</param>
@@ -44,6 +49,8 @@ namespace PlasticNotifyCenter.Data.Managers
 
         #endregion
 
+        #region Get app settings
+
         /// <summary>
         /// Gets the app settings entry (or null, if not jet configured)
         /// </summary>
@@ -51,6 +58,14 @@ namespace PlasticNotifyCenter.Data.Managers
             _dbContext.AppSettings
                 .Include(settings => settings.LdapConfig)
                 .FirstOrDefault();
+
+        /// <summary>
+        /// Gets whether users can register a new account manually
+        /// </summary>
+        public bool IsRegisterAllowed =>
+            AppSettings?.AllowRegistration ?? false;
+
+        #endregion
 
         #region Change settings
 

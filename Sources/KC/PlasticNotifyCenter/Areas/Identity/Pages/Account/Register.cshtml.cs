@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data.Identity;
-using PlasticNotifyCenter.Services;
+using PlasticNotifyCenter.Data.Managers;
 
 namespace PlasticNotifyCenter.Areas.Identity.Pages.Account
 {
@@ -26,20 +26,20 @@ namespace PlasticNotifyCenter.Areas.Identity.Pages.Account
         private readonly UserManager<User> _userManager;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
-        private readonly IAppSettingsService _appSettings;
+        private readonly IAppSettingsManager _appSettingsManager;
 
         public RegisterModel(
             UserManager<User> userManager,
             SignInManager<User> signInManager,
             ILogger<RegisterModel> logger,
             IEmailSender emailSender,
-            IAppSettingsService appSettings)
+            IAppSettingsManager appSettingsManager)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
-            _appSettings = appSettings;
+            _appSettingsManager = appSettingsManager;
         }
 
         [BindProperty]
@@ -75,7 +75,7 @@ namespace PlasticNotifyCenter.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnGetAsync(string returnUrl = null)
         {
-            if (!_appSettings.IsRegisterAllowed)
+            if (!_appSettingsManager.IsRegisterAllowed)
             {
                 return Forbid();
             }
@@ -86,7 +86,7 @@ namespace PlasticNotifyCenter.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            if (!_appSettings.IsRegisterAllowed)
+            if (!_appSettingsManager.IsRegisterAllowed)
             {
                 return Forbid();
             }

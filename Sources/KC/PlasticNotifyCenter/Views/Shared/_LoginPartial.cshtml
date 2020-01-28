@@ -1,9 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using PlasticNotifyCenter.Data.Identity;
-@using PlasticNotifyCenter.Services;
+@using PlasticNotifyCenter.Data.Managers;
 @inject SignInManager<User> SignInManager
 @inject UserManager<User> UserManager
-@inject IAppSettingsService appSettings;
+@inject IAppSettingsManager appSettingsManager;
 
 <ul class="navbar-nav">
 @if (SignInManager.IsSignedIn(User))
@@ -19,7 +19,7 @@
 }
 else
 {
-    @if(appSettings.IsRegisterAllowed)
+    @if(appSettingsManager.IsRegisterAllowed)
     {
     <li class="nav-item">
         <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">Register</a>

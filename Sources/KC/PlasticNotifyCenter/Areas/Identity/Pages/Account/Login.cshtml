@@ -1,6 +1,6 @@
 @page
-@using PlasticNotifyCenter.Services;
-@inject IAppSettingsService appSettings;
+@using PlasticNotifyCenter.Data.Managers;
+@inject IAppSettingsManager appSettingsManager;
 @model LoginModel
 
 @{
@@ -40,7 +40,7 @@
                     <p>
                         <a id="forgot-password" asp-page="./ForgotPassword">Forgot your password?</a>
                     </p>
-                    @if(appSettings.IsRegisterAllowed)
+                    @if(appSettingsManager.IsRegisterAllowed)
                     {
                     <p>
                         <a asp-page="./Register" asp-route-returnUrl="@Model.ReturnUrl">Register as a new user</a>

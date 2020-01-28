@@ -59,9 +59,6 @@ namespace PlasticNotifyCenter
             services.AddTransient<INotificationHistoryManager, NotificationHistoryManager>();
             services.AddTransient<INotifierManager, NotifierManager>();
 
-            // App-Settings
-            services.AddTransient<IAppSettingsService, AppSettingsService>();
-
             // LDAP
             services.AddTransient<ILdapService, LdapService>();
             services.AddHostedService<LdapSyncService>();
