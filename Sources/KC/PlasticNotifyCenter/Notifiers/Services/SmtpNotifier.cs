@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Data.Identity;
+using PlasticNotifyCenter.Data.Managers;
 using PlasticNotifyCenter.Mail;
 using PlasticNotifyCenter.Models;
 
@@ -25,8 +26,8 @@ namespace PlasticNotifyCenter.Notifiers
         // Mail service used to send the notifications
         private readonly IMailService _mailService;
 
-        public SmtpNotifier(ILogger<SmtpNotifier> logger, IMailService mailService, PncDbContext dbContext)
-            : base(logger, dbContext)
+        public SmtpNotifier(ILogger<SmtpNotifier> logger, IMailService mailService, INotificationHistoryManager notificationHistoryManager)
+            : base(logger, notificationHistoryManager)
         {
             this._mailService = mailService;
         }

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using PlasticNotifyCenter.Models;
 
 namespace PlasticNotifyCenter.Data.Managers
@@ -35,6 +36,12 @@ namespace PlasticNotifyCenter.Data.Managers
         /// Returns a list or triggers with their invocation counts
         /// </summary>
         IEnumerable<TriggerCallInfo> GetTriggerCallCount();
+
+        /// <summary>
+        /// Saves a new trigger invocation to the history
+        /// </summary>
+        /// <param name="call">Trigger call information</param>
+        Task StoreTriggerCallAsync(TriggerCall call);
     }
 
     /// <summary>
@@ -114,11 +121,48 @@ namespace PlasticNotifyCenter.Data.Managers
                 .Select((group) => new TriggerCallInfo() { Trigger = group.Key, Count = group.Count() });
 
         #endregion
+
+        #region New call
+
+        /// <summary>
+        /// Saves a new trigger invocation to the history
+        /// </summary>
+        /// <param name="call">Trigger call information</param>
+        public async Task StoreTriggerCallAsync(TriggerCall call)
+        {
+            // remove old values
+            _dbContext.TriggerVariables.RemoveRange(_dbContext.TriggerVariables.Where(v => v.Trigger == call.Type));
+
+            // prepare new values
+            List<TriggerVariable> variables =
+                new List<TriggerVariable>(
+                    call.EnvironmentVars.Select(var => new TriggerVariable(call.Type, var.Key, var.Value))
+                );
+
+            // add new values
+            await _dbContext.TriggerHistory.AddAsync(TriggerHistory.From(call));
+            await _dbContext.TriggerVariables.AddRangeAsync(variables);
+
+            // save
+            await _dbContext.SaveChangesAsync();
+        }
+
+        #endregion
     }
 
+    /// <summary>
+    /// Contains information about the call count of a trigger type
+    /// </summary>
     public class TriggerCallInfo
     {
+        /// <summary>
+        /// Gets or sets the name of the trigger type
+        /// </summary>
         public string Trigger { get; set; }
+
+        /// <summary>
+        /// Gets or sets the invocation count
+        /// </summary>
         public int Count { get; set; }
     }
 }

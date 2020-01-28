@@ -45,6 +45,12 @@ namespace PlasticNotifyCenter.Data.Managers
         IEnumerable<NotificationRule> GetRulesOwnedBy(IdentityUser owner);
 
         /// <summary>
+        /// Returns a list of rules triggerd by the provided type of trigger
+        /// </summary>
+        /// <param name="trigger">Name of trigger type</param>
+        IQueryable<NotificationRule> GetRulesOwnedTiggerType(string trigger);
+
+        /// <summary>
         /// Returns a rule by ID. Or null if no rule is found
         /// </summary>
         /// <param name="id">ID of requested rule</param>
@@ -230,11 +236,22 @@ namespace PlasticNotifyCenter.Data.Managers
         /// </summary>
         /// <param name="id">ID of requested rule</param>
         public NotificationRule GetRuleById(string id) =>
-        _dbContext.Rules
-            .Include(r => r.Notifiers)
-            .Include(r => r.Recipients).ThenInclude(n => n.User)
-            .Include(r => r.Recipients).ThenInclude(n => n.Role)
-            .FirstOrDefault(r => r.Id.Equals(id));
+            _dbContext.Rules
+                .Include(r => r.Notifiers)
+                .Include(r => r.Recipients).ThenInclude(n => n.User)
+                .Include(r => r.Recipients).ThenInclude(n => n.Role)
+                .FirstOrDefault(r => r.Id.Equals(id));
+
+        /// <summary>
+        /// Returns a list of rules triggerd by the provided type of trigger
+        /// </summary>
+        /// <param name="trigger">Name of trigger type</param>
+        public IQueryable<NotificationRule> GetRulesOwnedTiggerType(string trigger) =>
+            _dbContext.Rules
+                .Include(r => r.Notifiers)
+                .Include(r => r.Recipients).ThenInclude(r => r.User)
+                .Include(r => r.Recipients).ThenInclude(r => r.Role)
+                .Where(r => r.Trigger.Equals(trigger) && r.IsActive);
 
         #endregion
 

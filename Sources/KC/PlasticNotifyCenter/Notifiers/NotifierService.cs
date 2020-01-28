@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Data.Identity;
+using PlasticNotifyCenter.Data.Managers;
 using PlasticNotifyCenter.Models;
 
 namespace PlasticNotifyCenter.Notifiers
@@ -56,13 +57,14 @@ namespace PlasticNotifyCenter.Notifiers
                 {
                     // create new db context
                     using var scope = _serviceProvider.CreateScope();
-                    using PncDbContext dbContext = new PncDbContext(scope.ServiceProvider.GetRequiredService<DbContextOptions<PncDbContext>>());
 
                     // Create entry in history
-                    await TriggerHistoryEntryAsync(triggerCall, dbContext);
+                    ITriggerHistoryManager triggerHistoryManager = scope.ServiceProvider.GetRequiredService<ITriggerHistoryManager>();
+                    await TriggerHistoryEntryAsync(triggerCall, triggerHistoryManager);
 
                     // evaludate notification rules and send messages
-                    await EvaluateNotificationRulesAsync(triggerCall, dbContext);
+                    INotificationRulesManager notificationRulesManager = scope.ServiceProvider.GetRequiredService<INotificationRulesManager>();
+                    await EvaluateNotificationRulesAsync(triggerCall, notificationRulesManager);
                 }
                 catch (Exception ex)
                 {
@@ -80,26 +82,12 @@ namespace PlasticNotifyCenter.Notifiers
         /// </summary>
         /// <param name="call">Trigger call information</param>
         /// <param name="dbContext">Database context</param>
-        private async Task TriggerHistoryEntryAsync(TriggerCall call, PncDbContext dbContext)
+        private async Task TriggerHistoryEntryAsync(TriggerCall call, ITriggerHistoryManager triggerHistoryManager)
         {
             _logger.LogInformation("Plastic called trigger: {trigger}", call.Type);
 
-            // remove old values
-            dbContext.TriggerVariables.RemoveRange(dbContext.TriggerVariables.Where(v => v.Trigger == call.Type));
-
-            // prepare new values
-            List<TriggerVariable> variables = new List<TriggerVariable>();
-            foreach (var var in call.EnvironmentVars)
-            {
-                variables.Add(new TriggerVariable(call.Type, var.Key, var.Value));
-            }
-
-            // add new values
-            await dbContext.TriggerHistory.AddAsync(TriggerHistory.From(call));
-            await dbContext.TriggerVariables.AddRangeAsync(variables);
-
-            // save
-            await dbContext.SaveChangesAsync();
+            // Save trigger call
+            await triggerHistoryManager.StoreTriggerCallAsync(call);
         }
 
         #endregion
@@ -111,14 +99,10 @@ namespace PlasticNotifyCenter.Notifiers
         /// </summary>
         /// <param name="call">Trigger call</param>
         /// <returns></returns>
-        private async Task EvaluateNotificationRulesAsync(TriggerCall call, PncDbContext dbContext)
+        private async Task EvaluateNotificationRulesAsync(TriggerCall call, INotificationRulesManager notificationRulesManager)
         {
             // Get all rules for the rigger
-            var triggerRules = await dbContext.Rules
-                                            .Include(r => r.Notifiers)
-                                            .Include(r => r.Recipients).ThenInclude(r => r.User)
-                                            .Include(r => r.Recipients).ThenInclude(r => r.Role)
-                                            .Where(r => r.Trigger.Equals(call.Type) && r.IsActive).ToListAsync();
+            var triggerRules = await notificationRulesManager.GetRulesOwnedTiggerType(call.Type).ToListAsync();
 
             // Apply filters
             var filteredRules = _conditionEval.EvalFilterAsync(triggerRules, call.EnvironmentVars, call.Input);

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Data.Identity;
+using PlasticNotifyCenter.Data.Managers;
 
 namespace PlasticNotifyCenter.Notifiers
 {
@@ -20,15 +22,12 @@ namespace PlasticNotifyCenter.Notifiers
         /// </summary>
         protected ILogger Logger { get; }
 
-        /// <summary>
-        /// Gets a database context
-        /// </summary>
-        protected PncDbContext DbContext { get; }
+        private readonly INotificationHistoryManager _notificationHistoryManager;
 
-        public NotifierBase(ILogger _logger, PncDbContext _dbContext)
+        public NotifierBase(ILogger _logger, INotificationHistoryManager notificationHistoryManager)
         {
-            this.Logger = _logger;
-            this.DbContext = _dbContext;
+            Logger = _logger;
+            _notificationHistoryManager = notificationHistoryManager;
         }
 
         #endregion
@@ -53,42 +52,40 @@ namespace PlasticNotifyCenter.Notifiers
             Logger.LogDebug("Sending message via notifier {}", notiferData.DisplayName);
 
             // New notification history entry
-            var history = new NotificationHistory(typeof(T).GetCustomAttributes(false)
-                                                            .Where(a => a is NotifierAttribute)
-                                                            .Cast<NotifierAttribute>()
-                                                            .Select(a => a.Name)
-                                                            .SingleOrDefault());
-            await DbContext.NotificationHistory.AddAsync(history);
-            // save it
-            await DbContext.SaveChangesAsync();
+            int historyId = await _notificationHistoryManager.AddHistoryForTypeAsync(typeof(T));
 
             // Start sending messages to each recipient
             var tasks = GetRecipientTasks(notiferData, message, recipients);
-            if (tasks == null)
+
+            // Should have tasks
+            if (!(tasks?.Any() ?? false))
             {
                 // Count all recipients as failed in the case of a general error
-                history.FailedCount = recipients.Count();
-                await DbContext.SaveChangesAsync();
+                await _notificationHistoryManager.SetHistoryCountsAsync(historyId, 0, recipients.Count());
                 return;
             }
 
             // wait until all notifications have been send
-            await Task.Run(() => tasks.ToList().ForEach(task =>
-            {
-                try
+            int successCount = 0;
+            int failedCount = 0;
+            await Task.Run(() =>
+                tasks.AsParallel().ForAll(task =>
                 {
-                    task.Wait();
-                    history.SuccessCount++;
-                }
-                catch (Exception)
-                {
-                    // Should be logged in the notifier itself\
-                    history.FailedCount++;
-                }
-            }));
+                    try
+                    {
+                        // wait for successfull completion
+                        task.Wait();
+                        Interlocked.Increment(ref successCount);
+                    }
+                    catch (Exception)
+                    {
+                        // Should be logged in the notifier itself\
+                        Interlocked.Increment(ref failedCount);
+                    }
+                }));
 
             // update the history entry with success stats
-            await DbContext.SaveChangesAsync();
+            await _notificationHistoryManager.SetHistoryCountsAsync(historyId, successCount, failedCount);
         }
 
         /// <summary>
