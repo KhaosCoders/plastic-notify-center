@@ -31,6 +31,15 @@ namespace PlasticNotifyCenter.Data.Identity
         public bool IsDeleted { get; private set; }
 
         /// <summary>
+        /// Sets all properties of a role (group)
+        /// </summary>
+        /// <param name="name">Name of role</param>
+        public void UpdateProperties(string name)
+        {
+            Name = name;
+        }
+
+        /// <summary>
         /// Creates a new instance
         /// </summary>
         public Role()

@@ -48,7 +48,7 @@
             <td>@user.Email</td>
             <td>@user.Origin</td>
             <td>
-            @if (user.LockoutEnd > DateTime.Now)
+            @if (user.IsDeleted)
             {
                 <span class="badge badge-secondary">Inactive</span>
             }
@@ -80,7 +80,7 @@
                 </p>
             </div>
             <div class="modal-footer">
-                <form asp-area="" asp-controller="Admin" asp-action="DelUser" method="post">
+                <form asp-area="" asp-controller="Admin" asp-action="Users" method="delete">
                     <input type="hidden" name="id" id="deleteUserId">
                     <button type="submit" class="btn btn-danger">Delete</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>

@@ -10,8 +10,9 @@ using PlasticNotifyCenter.Data.Identity;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Services;
 using PlasticNotifyCenter.Controllers.Api;
-using System.DirectoryServices;
 using System;
+using PlasticNotifyCenter.Data.Managers;
+using System.Collections.Generic;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -23,113 +24,100 @@ namespace PlasticNotifyCenter.Controllers
         #region Dependencies
 
         private readonly ILogger<AdminController> _logger;
-        private readonly PncDbContext _dbContext;
         private readonly UserManager<User> _userManager;
         private readonly RoleManager<Role> _roleManager;
         private readonly IAuthorizationService _authorizationService;
         private readonly ILdapService _ldapService;
+        private readonly IAppSettingsManager _appSettingsManager;
+        private readonly INotificationRulesManager _rulesManager;
 
         public AdminController(ILogger<AdminController> logger,
-                               PncDbContext dbContect,
                                UserManager<User> userManager,
                                RoleManager<Role> roleManager,
                                IAuthorizationService authorizationService,
-                               ILdapService ldapService)
+                               ILdapService ldapService,
+                               IAppSettingsManager appSettingsManager,
+                               INotificationRulesManager rulesManager)
         {
-            _dbContext = dbContect;
             _logger = logger;
             _userManager = userManager;
             _roleManager = roleManager;
             _authorizationService = authorizationService;
             _ldapService = ldapService;
+            _appSettingsManager = appSettingsManager;
+            _rulesManager = rulesManager;
         }
 
         #endregion
 
         #region Index
 
-        [HttpGet]
+        [HttpGet("/Admin/Index")]
         public async Task<IActionResult> IndexAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // AppSettings has only one record
-            var appSettings = _dbContext.AppSettings.First();
-            return View(appSettings);
+            return View(_appSettingsManager.AppSettings);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> IndexAsync([FromForm] string baseUrl, [FromForm] string allowRegistration)
+        [HttpPost("/Admin/Index")]
+        public async Task<IActionResult> SaveIndexAsync([FromForm] string baseUrl, [FromForm] string allowRegistration)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
-            // AppSettings has only one record
-            var appSettings = _dbContext.AppSettings.First();
+            // Change settings
+            await _appSettingsManager.ChangeSettingsAsync(
+                baseUrl,
+                allowRegistration?.Equals("on", System.StringComparison.CurrentCultureIgnoreCase) ?? false);
 
-            // Update record
-            appSettings.BaseUrl = baseUrl;
-            appSettings.AllowRegistration = allowRegistration?.Equals("on", System.StringComparison.CurrentCultureIgnoreCase) ?? false;
-
-            // Save
-            await _dbContext.SaveChangesAsync();
-
-            return View(appSettings);
+            // Show same page
+            return RedirectToAction("Index");
         }
 
         #endregion
 
         #region Users
 
-        [HttpGet]
+        [HttpGet("/Admin/Users")]
         public async Task<IActionResult> UsersAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // Show all users in view
-            return View(new UsersViewModel()
-            {
-                Users = _userManager.Users.ToList()
-                            .OrderBy(user => user.Origin == Origins.Local ? 0 : 1)
-                            .ThenBy(user => user.LockoutEnd < DateTime.Now ? 0 : 1)
-                            .ThenBy(user => user.UserName)
-                            .ToArray()
-            });
+            return View(new UsersViewModel(_userManager.GetOrderedUsers().ToArray()));
         }
 
-        [HttpGet]
+        [HttpGet("/Admin/AddUser")]
         public async Task<IActionResult> AddUserAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // Show edit user form with new user template
-            return View("edit_user", new EditUserViewModel()
-            {
-                User = new User(),
-                IsNewUser = true
-            });
+            return View("edit_user", new EditUserViewModel(new User(), true));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> UserAsync(string id)
+        [HttpGet("/Admin/User/{id}")]
+        public async Task<IActionResult> UserAsync([FromRoute] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -148,89 +136,49 @@ namespace PlasticNotifyCenter.Controllers
             }
 
             // Show edit user form
-            return View("edit_user", new EditUserViewModel() { User = user });
+            return View("edit_user", new EditUserViewModel(user, false));
         }
 
-        [HttpPost]
-        public async Task<IActionResult> UserAsync(string id,
+        [HttpPost("/Admin/User/{id}")]
+        public async Task<IActionResult> SaveUserAsync(
+                                        [FromRoute] string id,
                                         [FromForm] string name,
                                         [FromForm] string email,
                                         [FromForm] string password)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
-            // New user or edited?
-            User user;
-
-            if (string.IsNullOrWhiteSpace(id))
+            try
             {
-                // New user
-                if (string.IsNullOrWhiteSpace(password))
-                {
-                    // New users need a password
-                    return BadRequest();
-                }
-                user = new User(name);
+                // Try to save changed or added user
+                await _userManager.SaveUserAsync(id, name, password, email);
             }
-            else
+            catch (ArgumentException aex)
             {
-                // Find user by ID
-                user = await _userManager.FindByIdAsync(id);
-                if (user == null)
-                {
-                    return NotFound();
-                }
+                return BadRequest(aex.Message);
             }
-
-            // Set properties
-            user.UserName = name;
-            user.Email = email;
-            user.EmailConfirmed = true;
-
-            if (string.IsNullOrWhiteSpace(id))
+            catch (InvalidOperationException oex)
             {
-                // Add new user
-                if (!(await _userManager.CreateAsync(user, password)).Succeeded)
-                {
-                    return BadRequest();
-                }
-                // All users get the User role
-                await _userManager.AddToRoleAsync(user, Roles.UserRole);
+                return BadRequest(oex.Message);
             }
-            else
+            catch (KeyNotFoundException kex)
             {
-                // Change password?
-                if (!string.IsNullOrWhiteSpace(password))
-                {
-                    // validate password
-                    if (_userManager.PasswordValidators.Any(v => !v.ValidateAsync(_userManager, user, password).Result.Succeeded))
-                    {
-                        return BadRequest();
-                    }
-                    // hash password
-                    user.PasswordHash = _userManager.PasswordHasher.HashPassword(user, password);
-                }
-
-                // save user changes
-                if (!(await _userManager.UpdateAsync(user)).Succeeded)
-                {
-                    return BadRequest();
-                }
+                return NotFound(kex.Message);
             }
 
             // Return to users view
             return RedirectToAction("Users", "Admin");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> DelUserAsync([FromForm] string id)
+        [HttpDelete("/Admin/User")]
+        public async Task<IActionResult> DeleteUserAsync([FromForm] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -241,15 +189,19 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find user by ID
-            var user = await _userManager.FindByIdAsync(id);
-            if (user == null)
+            // Try to delete user and recipients
+            try
             {
-                return NotFound();
+                await _userManager.DeleteByIdAsync(id, _rulesManager);
             }
-
-            // Delete user
-            await _userManager.DeleteAsync(user);
+            catch (KeyNotFoundException kex)
+            {
+                return NotFound(kex.Message);
+            }
+            catch (InvalidOperationException oex)
+            {
+                return BadRequest(oex.Message);
+            }
 
             // Return to users view
             return RedirectToAction("Users", "Admin");
@@ -259,46 +211,43 @@ namespace PlasticNotifyCenter.Controllers
 
         #region Groups
 
-        [HttpGet]
+        [HttpGet("/Admin/Groups")]
         public async Task<IActionResult> GroupsAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // Show all roles in the groups view
-            return View(new GroupsViewModel()
-            {
-                Roles = _roleManager.Roles.ToArray()
-            });
+            return View(new GroupsViewModel(_roleManager.GetOrderedRoles().ToArray()));
         }
 
-        [HttpGet]
+        [HttpGet("/Admin/AddGroup")]
         public async Task<IActionResult> AddGroupAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // Show the edit group form with a new group template
-            return View("edit_group", new EditGroupViewModel()
-            {
-                Role = new Role(),
-                IsNewRole = true,
-                UsersInRole = new User[0],
-                UserNotInRole = _userManager.Users.ToArray()
-            });
+            return View("edit_group", new EditGroupViewModel(
+                new Role(),
+                true,
+                // New role: no users assigned jet, all other active users free to assign
+                new User[0],
+                _userManager.GetOrderedUsers().ToArray()
+            ));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GroupAsync(string id)
+        [HttpGet("/Admin/Group/{id}")]
+        public async Task<IActionResult> GroupAsync([FromRoute] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -317,101 +266,58 @@ namespace PlasticNotifyCenter.Controllers
             }
 
             // User with this role
-            var usersInRole = _userManager.Users
-                                    .AsEnumerable()
-                                    .Where(u => _userManager.IsInRoleAsync(u, role.Name).Result)
-                                    .ToArray();
+            var usersInRole = _userManager.GetOrderedUsersOfRole(role).ToArray();
+
             // Users without this role
-            var usersNotinRole = _userManager.Users
-                                    .AsEnumerable()
+            var usersNotInRole = _userManager
+                                    .GetOrderedUsers()
                                     .Except(usersInRole)
                                     .ToArray();
 
             // Show edit group form
-            return View("edit_group", new EditGroupViewModel()
-            {
-                Role = role,
-                UsersInRole = usersInRole,
-                UserNotInRole = usersNotinRole
-            });
+            return View("edit_group", new EditGroupViewModel(
+                role,
+                false,
+                usersInRole,
+                usersNotInRole
+            ));
         }
 
-        [HttpPost]
-        public async Task<IActionResult> GroupAsync(string id,
-                                                    [FromForm] string name,
-                                                    [FromForm] string[] users)
+        [HttpPost("/Admin/Group/{id}")]
+        public async Task<IActionResult> SaveGroupAsync(
+                                            [FromRoute] string id,
+                                            [FromForm] string name,
+                                            [FromForm] string[] users)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
-            // New role or edited?
-            Role role;
-
-            if (string.IsNullOrWhiteSpace(id))
+            try
             {
-                // New role
-                role = new Role(name);
+                // Try to save changed or added role (group)
+                await _roleManager.SaveRoleAsync(_userManager, id, name, users);
             }
-            else
+            catch (InvalidOperationException oex)
             {
-                // Find role by ID
-                role = await _roleManager.FindByIdAsync(id);
-                if (role == null)
-                {
-                    return NotFound();
-                }
+                return BadRequest(oex.Message);
             }
-
-            // Set properties
-            role.Name = name;
-
-            if (string.IsNullOrWhiteSpace(id))
+            catch (KeyNotFoundException kex)
             {
-                // Add new role
-                if (!(await _roleManager.CreateAsync(role)).Succeeded)
-                {
-                    return BadRequest();
-                }
-            }
-            else
-            {
-                // Save role
-                if (!(await _roleManager.UpdateAsync(role)).Succeeded)
-                {
-                    return BadRequest();
-                }
-            }
-
-            // User assignments
-            // Cycle through all users
-            foreach (var user in _userManager.Users)
-            {
-                // Has user the role currently?
-                var inRole = await _userManager.IsInRoleAsync(user, role.Name);
-                if (inRole && !users.Contains(user.Id))
-                {
-                    // User should not have the role anymore
-                    await _userManager.RemoveFromRoleAsync(user, role.Name);
-                }
-                else if (!inRole && users.Contains(user.Id))
-                {
-                    // User should have the role now
-                    await _userManager.AddToRoleAsync(user, role.Name);
-                }
+                return NotFound(kex.Message);
             }
 
             // Return to the groups view
             return RedirectToAction("Groups", "Admin");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> DelGroupAsync([FromForm] string id)
+        [HttpDelete("/Admin/Group")]
+        public async Task<IActionResult> DeleteGroupAsync([FromForm] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -422,21 +328,19 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find role by ID
-            var role = await _roleManager.FindByIdAsync(id);
-            if (role == null)
+            // Try to delete role and recipients
+            try
             {
-                return NotFound();
+                await _roleManager.DeleteByIdAsync(id, _rulesManager);
             }
-
-            // Build-In roles can't be deleted
-            if (role.IsBuildIn)
+            catch (KeyNotFoundException kex)
             {
-                return Forbid();
+                return NotFound(kex.Message);
             }
-
-            // Delete role
-            await _roleManager.DeleteAsync(role);
+            catch (InvalidOperationException oex)
+            {
+                return BadRequest(oex.Message);
+            }
 
             // Return to the groups view
             return RedirectToAction("Groups", "Admin");
@@ -446,19 +350,18 @@ namespace PlasticNotifyCenter.Controllers
 
         #region LDAP
 
-        [HttpGet]
+        [HttpGet("/Admin/LDAP")]
         public async Task<IActionResult> LDAPAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // LDAP settings are part of AppSettings
             // AppSettings has only one record
-            var appSettings = _dbContext.AppSettings.First();
-            return View(appSettings);
+            return View(_appSettingsManager.AppSettings);
         }
 
 
@@ -466,28 +369,23 @@ namespace PlasticNotifyCenter.Controllers
         public async Task<IActionResult> SaveLDAPAsync([FromForm] LdapSettings ldapConfig)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
-            // LDAP settings are part of AppSettings
-            // AppSettings has only one record
-            var appSettings = _dbContext.AppSettings.First();
-            appSettings.LdapConfig = ldapConfig;
-
-            // Save
-            await _dbContext.SaveChangesAsync();
+            // Update config
+            await _appSettingsManager.ChangeLdapConfig(ldapConfig);
 
             // Reload view
             return RedirectToAction("LDAP");
         }
 
-        [HttpPost]
+        [HttpPost("/Admin/TestLDAP")]
         public async Task<IActionResult> TestLDAPAsync([FromForm] LdapSettings ldapConfig)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -543,18 +441,17 @@ namespace PlasticNotifyCenter.Controllers
 
         #region Triggers
 
-        [HttpGet]
+        [HttpGet("/Admin/Triggers")]
         public async Task<IActionResult> TriggersAsync()
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
-            // AppSettings has only one record
-            var appSettings = _dbContext.AppSettings.First();
-            return View(appSettings);
+            // Show triggers view
+            return View(_appSettingsManager.AppSettings);
         }
 
         #endregion

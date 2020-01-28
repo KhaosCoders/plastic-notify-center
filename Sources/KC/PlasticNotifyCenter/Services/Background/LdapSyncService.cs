@@ -212,7 +212,7 @@ namespace PlasticNotifyCenter.Services.Background
 
             // Reactivate old users
             knownUsers
-                .Where(user => user.LockoutEnd > DateTime.Now)
+                .Where(user => user.IsDeleted)
                 .Select(user => new { User = user, LdapUser = ldapUsers.FirstOrDefault(ldapUser => ldapUser.LdapGuid == user.LdapGuid) })
                 .Where(pair => pair.LdapUser != null)
                 .ToList()

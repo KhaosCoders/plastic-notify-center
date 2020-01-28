@@ -16,6 +16,7 @@ using PlasticNotifyCenter.Notifiers;
 using PlasticNotifyCenter.Services;
 using Serilog;
 using PlasticNotifyCenter.Services.Background;
+using PlasticNotifyCenter.Data.Managers;
 
 namespace PlasticNotifyCenter
 {
@@ -50,6 +51,10 @@ namespace PlasticNotifyCenter
                 options.EnableSensitiveDataLogging(true);
 #endif
             });
+
+            // Data-Managers
+            services.AddTransient<IAppSettingsManager, AppSettingsManager>();
+            services.AddTransient<INotificationRulesManager, NotificationRulesManager>();
 
             // App-Settings
             services.AddTransient<IAppSettingsService, AppSettingsService>();

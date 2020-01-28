@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Utils;
@@ -19,6 +20,24 @@ namespace PlasticNotifyCenter.Data.Identity
         /// Gets or sets a unique ID comming from LDAP to identify this user
         /// </summary>
         public string LdapGuid { get; set; }
+
+        /// <summary>
+        /// Gets whether a user is locked out right now (deleted / deactivated)
+        /// </summary>
+        [NotMapped]
+        public bool IsDeleted => LockoutEnd > DateTime.Now;
+
+        /// <summary>
+        /// Sets all properties of a user
+        /// </summary>
+        /// <param name="name">Name of user</param>
+        /// <param name="email">Email address of user</param>
+        public void UpdateProperties(string name, string email)
+        {
+            UserName = name;
+            Email = email;
+            EmailConfirmed = true;
+        }
 
         /// <summary>
         /// Creates a new instance

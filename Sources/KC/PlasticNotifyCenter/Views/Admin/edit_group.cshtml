@@ -32,7 +32,7 @@
                         {
                         <option value="@user.Id" selected>@user.UserName</option>
                         }
-                        @foreach(var user in Model.UserNotInRole)
+                        @foreach(var user in Model.UsersNotInRole)
                         {
                         <option value="@user.Id">@user.UserName</option>
                         }

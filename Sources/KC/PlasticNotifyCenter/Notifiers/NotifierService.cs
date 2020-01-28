@@ -235,11 +235,15 @@ namespace PlasticNotifyCenter.Notifiers
                 recipient.User != null
                     ? new User[] { recipient.User }
                     // Revolve user groups to a list of users in the group
-                    : allUsers
-                        .Where(u => userManager.IsInRoleAsync(u, recipient.Role.Name).Result)
-                        .ToArray())
+                    : recipient.Role.IsDeleted
+                        // If role (group) was deleted
+                        ? null
+                        // Resolve group
+                        : allUsers
+                            .Where(u => userManager.IsInRoleAsync(u, recipient.Role.Name).Result)
+                            .ToArray())
                 // Only active users
-                .Where(user => user.LockoutEnd < DateTime.Now)
+                .Where(user => user != null && !user.IsDeleted)
                 // return a list of destinct users, even if they are in multiple included user groups
                 .Distinct(new UserEqualityComparer())
                 .ToArray();
