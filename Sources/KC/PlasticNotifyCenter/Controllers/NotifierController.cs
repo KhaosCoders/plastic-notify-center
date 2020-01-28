@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Controllers.Api;
-using PlasticNotifyCenter.Data;
+using PlasticNotifyCenter.Data.Managers;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace PlasticNotifyCenter.Controllers
@@ -22,27 +22,28 @@ namespace PlasticNotifyCenter.Controllers
         #region Dependencies
 
         private readonly ILogger<NotifierController> _logger;
-        private readonly PncDbContext _dbContext;
         private readonly IAuthorizationService _authorizationService;
         private readonly INotifierDefinitionService _notifierDefinitionService;
+        private readonly INotifierManager _notifierManager;
 
         public NotifierController(ILogger<NotifierController> logger,
-                                  PncDbContext dbContect,
                                   IAuthorizationService authorizationService,
-                                  INotifierDefinitionService notifierIconService)
+                                  INotifierDefinitionService notifierIconService,
+                                  INotifierManager notifierManager)
         {
             _logger = logger;
-            _dbContext = dbContect;
             _authorizationService = authorizationService;
             _notifierDefinitionService = notifierIconService;
+            _notifierManager = notifierManager;
         }
 
         #endregion
 
-        public async Task<IActionResult> IndexAsync(string id)
+        [HttpGet("/Notifier/{id}")]
+        public async Task<IActionResult> IndexAsync([FromRoute] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -53,19 +54,12 @@ namespace PlasticNotifyCenter.Controllers
             model.NotifierTypes = _notifierDefinitionService.GetAllNotifierTypes();
 
             // List all created notifiers
-            model.Notifiers = _dbContext.Notifiers.ToList()
-                                .Select(n => new NotifierInfo()
-                                {
-                                    Id = n.Id,
-                                    Name = n.DisplayName,
-                                    Icon = _notifierDefinitionService.GetIcon(n.GetType())
-                                })
-                                .ToArray();
+            model.Notifiers = _notifierManager.GetOrderedNotifiers().ToArray();
 
             if (!string.IsNullOrWhiteSpace(id))
             {
                 // Select a specific notifier
-                var notifier = _dbContext.Notifiers.FirstOrDefault(n => n.Id.Equals(id));
+                var notifier = _notifierManager.GetNotifierById(id);
                 if (notifier == null)
                 {
                     return NotFound();
@@ -75,53 +69,51 @@ namespace PlasticNotifyCenter.Controllers
             else if (model.Notifiers.Length > 0)
             {
                 // Select the first notfier (or none)
-                model.SelectedNotifier = _dbContext.Notifiers.FirstOrDefault();
+                model.SelectedNotifier = _notifierManager.GetFirstNotifier();
             }
 
             return View(model);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> SaveAsync(string id)
+        [HttpPost("/Notifier/{id}")]
+        public async Task<IActionResult> SaveNotifierAsync([FromRoute] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
 
             // Read POST body
+            string body = string.Empty;
             using (var reader = new StreamReader(Request.Body))
             {
-                string body = await reader.ReadToEndAsync();
+                body = await reader.ReadToEndAsync();
                 if (string.IsNullOrWhiteSpace(body))
                 {
                     return BadRequest();
                 }
-
-                // Find notifier by Id
-                BaseNotifierData notifier = _dbContext.Notifiers.FirstOrDefault(n => n.Id.Equals(id));
-                if (notifier == null)
-                {
-                    return Ok(new FailureResponse("Notifier not found"));
-                }
-
-                // Apply changes
-                await notifier.ApplyJsonPropertiesAsync(body);
             }
 
-            // Save changes
-            await _dbContext.SaveChangesAsync();
+            // Try to save notifier changes
+            try
+            {
+                await _notifierManager.ChangeNotifierAsync(id, body);
+            }
+            catch (KeyNotFoundException kex)
+            {
+                return Ok(new FailureResponse(kex.Message));
+            }
 
             // Return success response
             return Ok(new SuccessResponse());
         }
 
-        [HttpPost]
+        [HttpPost("/Notifier/New")]
         public async Task<IActionResult> NewAsync([FromForm] string typedId)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -132,41 +124,25 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find the type of notifier data
-            Type notifierDataType = _notifierDefinitionService.GetNotifierDataType(typedId);
-            if (notifierDataType == null)
+            // Creates a new notifier of given type
+            try
             {
-                return NotFound();
-            }
+                string newId = await _notifierManager.NewNotifierAsync(typedId);
 
-            // Create a new instance of the notifier data type
-            BaseNotifierData notifier = Activator.CreateInstance(notifierDataType, new object[] { false }) as BaseNotifierData;
-            if (notifier == null || string.IsNullOrWhiteSpace(notifier.Id))
+                // Redirect to notifiers view (with new notifier selected)
+                return new RedirectToActionResult("Index", "Notifier", new { @Id = newId });
+            }
+            catch (TypeAccessException tex)
             {
-                return NotFound();
+                return NotFound(tex.Message);
             }
-
-            // Get name of notifier type
-            string notifierName = _notifierDefinitionService.GetNotifierTypeName(typedId) ?? "Notifier";
-
-            // Prefill display name
-            notifier.DisplayName = $"New {notifierName}";
-
-            // Add notifier
-            await _dbContext.Notifiers.AddAsync(notifier);
-
-            // save
-            await _dbContext.SaveChangesAsync();
-
-            // Redirect to notifiers view (with new notifier selected)
-            return new RedirectToActionResult("Index", "Notifier", new { @Id = notifier.Id });
         }
 
-        [HttpGet]
-        public async Task<IActionResult> DeleteAsync(string id)
+        [HttpDelete("/Notifier/{id}")]
+        public async Task<IActionResult> DeleteAsync([FromRoute] string id)
         {
             // Check authorization
-            if (!(await _authorizationService.AuthorizeAsync(User, null, RoleRequirements.AdminRoleRequirement)).Succeeded)
+            if (!(await User.IsAdminAsync(_authorizationService)))
             {
                 return Unauthorized();
             }
@@ -177,18 +153,15 @@ namespace PlasticNotifyCenter.Controllers
                 return BadRequest();
             }
 
-            // Find notifier by Id
-            BaseNotifierData notifier = _dbContext.Notifiers.FirstOrDefault(n => n.Id.Equals(id));
-            if (notifier == null)
+            try
             {
-                return NotFound();
+                // Try to delete notifier
+                await _notifierManager.DeleteNotifierByIdAsync(id);
             }
-
-            // Remove notifier
-            _dbContext.Notifiers.Remove(notifier);
-
-            // Save
-            await _dbContext.SaveChangesAsync();
+            catch (KeyNotFoundException kex)
+            {
+                return NotFound(kex.Message);
+            }
 
             // Redirect to notifiers view
             return RedirectToAction("Index");

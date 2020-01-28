@@ -57,6 +57,7 @@ namespace PlasticNotifyCenter
             services.AddTransient<INotificationRulesManager, NotificationRulesManager>();
             services.AddTransient<ITriggerHistoryManager, TriggerHistoryManager>();
             services.AddTransient<INotificationHistoryManager, NotificationHistoryManager>();
+            services.AddTransient<INotifierManager, NotifierManager>();
 
             // App-Settings
             services.AddTransient<IAppSettingsService, AppSettingsService>();

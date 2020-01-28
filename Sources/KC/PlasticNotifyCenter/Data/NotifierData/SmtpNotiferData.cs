@@ -57,15 +57,15 @@ namespace PlasticNotifyCenter.Data
         /// Used by EF
         /// </remarks>
         private SmtpNotifierData()
-            : base(true)
+            : base()
         { }
 
         /// <summary>
         /// Creates a new instance
         /// </summary>
-        /// <param name="isEF">Should always be false</param>
-        public SmtpNotifierData(bool isEF)
-            : base(isEF)
+        /// <param name="displayName">Display name of notifier</param>
+        public SmtpNotifierData(string displayName)
+            : base(displayName)
         { }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace PlasticNotifyCenter.Data
         /// </summary>
         /// <param name="configuration">SMTP configuration values</param>
         public static SmtpNotifierData CreateFrom(SmtpConfiguration configuration) =>
-            CopyPropertyValues(new SmtpNotifierData(false), configuration);
+            CopyPropertyValues(new SmtpNotifierData(configuration.Name), configuration);
 
         /// <summary>
         /// Copies all values of a SmtpConfiguration to the data model

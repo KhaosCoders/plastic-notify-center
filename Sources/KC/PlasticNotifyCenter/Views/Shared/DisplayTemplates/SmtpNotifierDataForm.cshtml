@@ -142,7 +142,7 @@
     function saveSmtpNotifier() {
         return $.ajax({
                 type: "POST",
-                url: "/Notifier/Save/@Model.Id",
+                url: "/Notifier/@Model.Id",
                 contentType: 'application/json',
                 data: JSON.stringify({
                     Name: $("#smtpName").val(),

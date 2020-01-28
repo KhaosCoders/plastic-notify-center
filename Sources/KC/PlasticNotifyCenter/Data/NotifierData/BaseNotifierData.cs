@@ -28,15 +28,21 @@ namespace PlasticNotifyCenter.Data
         /// <summary>
         /// Creates a new instance
         /// </summary>
-        /// <param name="isEF">set this to true, if your constructor is private and only called by EF, for performance optimization</param>
-        public BaseNotifierData(bool isEF)
+        /// <remarks>
+        /// Used by EF
+        /// </remarks>
+        protected BaseNotifierData()
+        { }
+
+        /// <summary>
+        /// Creates a new instance
+        /// </summary>
+        /// <param name="displayName">Display name of notifier</param>
+        public BaseNotifierData(string displayName)
         {
-            if (!isEF)
-            {
-                Id = Guid.NewGuid().ToString();
-                DisplayName = "Notifier";
-                Version = "1.0";
-            }
+            Id = Guid.NewGuid().ToString();
+            DisplayName = displayName;
+            Version = "1.0";
         }
 
         /// <summary>

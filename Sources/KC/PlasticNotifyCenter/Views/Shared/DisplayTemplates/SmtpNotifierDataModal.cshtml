@@ -46,7 +46,7 @@
                 </p>
             </div>
             <div class="modal-footer">
-                <form asp-area="" asp-controller="Notifier" asp-action="Delete" asp-route-id="@(Model?.Id ?? "")" method="get">
+                <form asp-area="" asp-controller="Notifier" asp-action="" asp-route-id="@(Model?.Id ?? "")" method="get">
                     <button type="submit" class="btn btn-danger">Delete</button>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
                 </form>

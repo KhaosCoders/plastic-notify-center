@@ -18,13 +18,13 @@ namespace PlasticNotifyCenter.Data.Managers
         #region Dependencies
 
         private readonly PncDbContext _dbContext;
-        private readonly INotifierDefinitionService _notifierIconService;
+        private readonly INotifierDefinitionService _notifierDefinitionService;
 
         public NotificationHistoryManager(PncDbContext dbContext,
-                            INotifierDefinitionService notifierIconService)
+                            INotifierDefinitionService notifierDefinitionService)
         {
             _dbContext = dbContext;
-            _notifierIconService = notifierIconService;
+            _notifierDefinitionService = notifierDefinitionService;
         }
 
         #endregion
@@ -37,7 +37,7 @@ namespace PlasticNotifyCenter.Data.Managers
                 .Select(g => new NotificationStats()
                 {
                     Notifier = g.Key,
-                    Icon = _notifierIconService.GetIcon(g.Key),
+                    Icon = _notifierDefinitionService.GetIcon(g.Key),
                     SuccessCount = g.Sum(e => e.SuccessCount),
                     FailedCount = g.Sum(e => e.FailedCount)
                 });
