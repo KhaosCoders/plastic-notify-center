@@ -64,7 +64,7 @@ namespace PlasticNotifyCenter.Data.Identity
         internal void Deactivate()
         {
             IsDeleted = true;
-            Name = $"{Name}-{DateTime.Now.ToShortDateString()}";
+            Name = LdapGuid;
         }
 
         /// <summary>

@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using PlasticNotifyCenter.Authorization;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Data.Identity;
+using PlasticNotifyCenter.Data.Managers;
 using PlasticNotifyCenter.Models;
 
 namespace PlasticNotifyCenter.Services.Background
@@ -101,7 +101,7 @@ namespace PlasticNotifyCenter.Services.Background
                     // All users in this LDAP group
                     var usersInGroup = allUsers
                         .Where(user => userManager.IsInRoleAsync(user, ldapGroup.Name).Result)
-                        .ToList();
+                        .ToArray();
 
                     // Remove old users
                     usersInGroup
@@ -109,11 +109,10 @@ namespace PlasticNotifyCenter.Services.Background
                         .Where(user => !ldapGroup.UserGuids.Contains(user.LdapGuid))
                         .ToList()
                         // Remove each user from the group (role)
-                        .ForEach(user =>
+                        .ForEach(async user =>
                         {
                             _logger.LogInformation("User {0} is no longer part of group {1}", user.UserName, ldapGroup.Name);
-                            var result = userManager.RemoveFromRoleAsync(user, ldapGroup.Name).Result;
-                            if (!result.Succeeded)
+                            if (!(await userManager.RemoveFromRoleAsync(user, ldapGroup.Name)).Succeeded)
                             {
                                 _logger.LogWarning("Can't remove user {0} from group {1}", user.UserName, ldapGroup.Name);
                             }
@@ -127,11 +126,10 @@ namespace PlasticNotifyCenter.Services.Background
                         .Join(allUsers, ldapGuid => ldapGuid, user => user.LdapGuid, (ldapGuid, user) => user)
                         .ToList()
                         // Add each new user to the group (role)
-                        .ForEach(user =>
+                        .ForEach(async user =>
                         {
                             _logger.LogInformation("User {0} is now part of group {1}", user.UserName, ldapGroup.Name);
-                            var result = userManager.AddToRoleAsync(user, ldapGroup.Name).Result;
-                            if (!result.Succeeded)
+                            if (!(await userManager.AddToRoleAsync(user, ldapGroup.Name)).Succeeded)
                             {
                                 _logger.LogWarning("Can't add user {0} to group {1}", user.UserName, ldapGroup.Name);
                             }
@@ -156,11 +154,10 @@ namespace PlasticNotifyCenter.Services.Background
             knownGroups
                 .Where(group => !ldapGroups.Any(ldapGroup => ldapGroup.LdapGuid == group.LdapGuid))
                 .ToList()
-                .ForEach(group =>
+                .ForEach(async group =>
                 {
                     _logger.LogInformation("Group {0} is no longer part of the LDAP directory and is therefore deactivated", group.Name);
-                    group.Deactivate();
-                    roleManager.UpdateAsync(group);
+                    await roleManager.DeactivateRoleAsync(group);
                 });
 
             // Reactivate old groups
@@ -169,11 +166,10 @@ namespace PlasticNotifyCenter.Services.Background
                 .Select(user => new { Group = user, LdapGroup = ldapGroups.FirstOrDefault(ldapUser => ldapUser.LdapGuid == user.LdapGuid) })
                 .Where(pair => pair.LdapGroup != null)
                 .ToList()
-                .ForEach(pair =>
+                .ForEach(async pair =>
                 {
                     _logger.LogInformation("Group {0} is again part of the LDAP directory and is therefore no longer deactivated", pair.Group.Name);
-                    pair.Group.Reactivate(pair.LdapGroup);
-                    roleManager.UpdateAsync(pair.Group);
+                    await roleManager.ReactivateRoleAsync(pair.Group, pair.LdapGroup);
                 });
 
             // Create new groups
@@ -208,11 +204,10 @@ namespace PlasticNotifyCenter.Services.Background
             knownUsers
                 .Where(user => !ldapUsers.Any(ldapUser => ldapUser.LdapGuid == user.LdapGuid))
                 .ToList()
-                .ForEach(user =>
+                .ForEach(async user =>
                 {
                     _logger.LogInformation("User {0} is no longer part of the LDAP directory and is therefore locked out", user.UserName);
-                    user.Deactivate();
-                    userManager.UpdateAsync(user);
+                    await userManager.DeactivateUserAsync(user);
                 });
 
             // Reactivate old users
@@ -221,32 +216,22 @@ namespace PlasticNotifyCenter.Services.Background
                 .Select(user => new { User = user, LdapUser = ldapUsers.FirstOrDefault(ldapUser => ldapUser.LdapGuid == user.LdapGuid) })
                 .Where(pair => pair.LdapUser != null)
                 .ToList()
-                .ForEach(pair =>
+                .ForEach(async pair =>
                 {
                     _logger.LogInformation("User {0} is again part of the LDAP directory and is therefore no longer locked out", pair.User.UserName);
-                    pair.User.Reactivate(pair.LdapUser);
-                    userManager.UpdateAsync(pair.User);
+                    await userManager.ReactivateUserAsync(pair.User, pair.LdapUser);
                 });
 
             // Create new users
             ldapUsers
                 .Where(ldapUser => !knownUsers.Any(user => ldapUser.LdapGuid == user.LdapGuid))
                 .ToList()
-                .ForEach(ldapUser =>
+                .ForEach(async ldapUser =>
                 {
                     _logger.LogInformation("Add new user for LDAP {0} (Guid: {1})", ldapUser.UserName, ldapUser.LdapGuid);
-                    var user = User.FromLDAP(ldapUser);
-                    var result = userManager.CreateAsync(user).Result;
-                    if (!result.Succeeded)
+                    if (!(await userManager.AddLdapUser(ldapUser)).Succeeded)
                     {
-                        _logger.LogWarning("Can't create new user {0} (Email: {1})", ldapUser.UserName, ldapUser.Email);
-                        return;
-                    }
-                    // Every user is in the users role
-                    result = userManager.AddToRoleAsync(user, Roles.UserRole).Result;
-                    if (!result.Succeeded)
-                    {
-                        _logger.LogWarning("Can't add new user {0} to 'users' group", ldapUser.UserName, ldapUser.Email);
+                        _logger.LogWarning("Can't create new user {0} (Email: {1}) or add him to the default 'users' group", ldapUser.UserName, ldapUser.Email);
                     }
                 });
         }
