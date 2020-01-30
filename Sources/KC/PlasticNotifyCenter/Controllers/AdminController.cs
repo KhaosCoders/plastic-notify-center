@@ -66,7 +66,10 @@ namespace PlasticNotifyCenter.Controllers
         }
 
         [HttpPost("/Admin")]
-        public async Task<IActionResult> SaveGeneralAsync([FromForm] string baseUrl, [FromForm] string allowRegistration)
+        public async Task<IActionResult> SaveGeneralAsync(
+                                            [FromForm] string baseUrl,
+                                            [FromForm] string allowRegistration,
+                                            [FromForm] string htmlMessageTemplate)
         {
             // Check authorization
             if (!(await User.IsAdminAsync(_authorizationService)))
@@ -77,7 +80,8 @@ namespace PlasticNotifyCenter.Controllers
             // Change settings
             await _appSettingsManager.SaveSettingsAsync(
                 baseUrl,
-                allowRegistration?.Equals("on", System.StringComparison.CurrentCultureIgnoreCase) ?? false);
+                allowRegistration?.Equals("on", System.StringComparison.CurrentCultureIgnoreCase) ?? false,
+                htmlMessageTemplate);
 
             // Show same page
             return RedirectToAction("Index");

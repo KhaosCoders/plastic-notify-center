@@ -11,7 +11,7 @@
         </h1>
     </div>
     <hr class="my-4">
-    @Html.Partial("_menu", "ldap")
+    @Html.PartialAsync("_menu", "ldap")
     <div class="row">
         <form id="ldapForm" asp-area="" asp-controller="Admin" asp-action="LDAP" method="post">
 

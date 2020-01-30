@@ -11,7 +11,7 @@
         </h1>
     </div>
     <hr class="my-4">
-    @Html.Partial("_menu", "groups")
+    @Html.PartialAsync("_menu", "groups")
     <p>
         <form asp-area="" asp-controller="Admin" asp-action="AddGroup" method="get">
             <button type="submit" class="btn btn-primary">Add group</button>
