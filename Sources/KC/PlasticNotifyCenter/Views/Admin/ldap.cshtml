@@ -106,6 +106,13 @@
                 <small id="ldapUserEmailAttrHelp" class="form-text text-muted">Name of attribute used as email address.</small>
                 <div id="ldapUserEmailAttrValidator" style="display: none;"></div>
             </div>
+            <div class="form-group text-left">
+                <label for="ldapUserGuidAttr">Unique ID</label>
+                <input type="text" class="form-control" id="ldapUserGuidAttr" name="LdapUserGuidAttr" aria-describedby="ldapUserGuidAttrHelp"
+                    placeholder="Enter the name of the GUID attribute" value="@Model.LdapConfig.LdapUserGuidAttr">
+                <small id="ldapUserGuidAttrHelp" class="form-text text-muted">Name of attribute used as unique identifier.</small>
+                <div id="ldapUserGuidAttrValidator" style="display: none;"></div>
+            </div>
 
             <div class="form-group text-left row">
                 <label class="col-sm-12 col-form-label font-weight-bold">Group Attributes</label>
@@ -123,6 +130,13 @@
                     placeholder="Enter the name of the group member attribute" value="@Model.LdapConfig.LdapMember">
                 <small id="ldapMemberHelp" class="form-text text-muted">Name of attribute used when finding group members.</small>
                 <div id="ldapMemberValidator" style="display: none;"></div>
+            </div>
+            <div class="form-group text-left">
+                <label for="ldapGroupGuidAttr">Unique ID</label>
+                <input type="text" class="form-control" id="ldapGroupGuidAttr" name="LdapGroupGuidAttr" aria-describedby="ldapGroupGuidAttrHelp"
+                    placeholder="Enter the name of the GUID attribute" value="@Model.LdapConfig.LdapGroupGuidAttr">
+                <small id="ldapGroupGuidAttrHelp" class="form-text text-muted">Name of attribute used as unique identifier.</small>
+                <div id="ldapGroupGuidAttrValidator" style="display: none;"></div>
             </div>
 
             <button class="btn btn-primary">Save</button>
