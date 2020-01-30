@@ -22,7 +22,7 @@
         </h1>
     </div>
     <hr class="my-4">
-    @Html.PartialAsync("_menu", "triggers")
+    @await Html.PartialAsync("_menu", "triggers")
     <input type="hidden" id="baseUrl" value="@Model.BaseUrl" />
     <div class="row">
         <div class="col12">

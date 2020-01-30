@@ -11,7 +11,7 @@
         </h1>
     </div>
     <hr class="my-4">
-    @Html.PartialAsync("_menu", "users")
+    @await Html.PartialAsync("_menu", "users")
     <p>
         <form asp-area="" asp-controller="Admin" asp-action="AddUser" method="get">
             <button type="submit" class="btn btn-primary">Add user</button>
