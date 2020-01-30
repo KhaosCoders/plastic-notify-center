@@ -1,0 +1,19 @@
+@model string
+
+<ul class="nav nav-tabs">
+    <li class="nav-link @(Model == "general" ? "active" : "")">
+        <a asp-area="" asp-controller="Admin" asp-action="Index">General</a>
+    </li>
+    <li class="nav-link @(Model == "users" ? "active" : "")">
+        <a asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
+    </li>
+    <li class="nav-link @(Model == "groups" ? "active" : "")">
+        <a asp-area="" asp-controller="Admin" asp-action="Groups">Groups</a>
+    </li>
+    <li class="nav-link @(Model == "ldap" ? "active" : "")">
+        <a asp-area="" asp-controller="Admin" asp-action="LDAP">LDAP</a>
+    </li>
+    <li class="nav-link @(Model == "triggers" ? "active" : "")">
+        <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
+    </li>
+</ul>

@@ -11,23 +11,7 @@
         </h1>
     </div>
     <hr class="my-4">
-    <ul class="nav nav-tabs">
-        <li class="nav-link">
-            <a asp-area="" asp-controller="Admin" asp-action="Index">General</a>
-        </li>
-        <li class="nav-link active">
-            <a asp-area="" asp-controller="Admin" asp-action="Users">Users</a>
-        </li>
-        <li class="nav-link">
-            <a asp-area="" asp-controller="Admin" asp-action="Groups">Groups</a>
-        </li>
-        <li class="nav-link">
-            <a asp-area="" asp-controller="Admin" asp-action="LDAP">LDAP</a>
-        </li>
-        <li class="nav-link">
-            <a asp-area="" asp-controller="Admin" asp-action="Triggers">Triggers</a>
-        </li>
-    </ul>
+    @Html.Partial("_menu", "users")
     <p>
         <form asp-area="" asp-controller="Admin" asp-action="AddUser" method="get">
             <button type="submit" class="btn btn-primary">Add user</button>
