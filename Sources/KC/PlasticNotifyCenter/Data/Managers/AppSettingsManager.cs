@@ -15,6 +15,11 @@ namespace PlasticNotifyCenter.Data.Managers
         AppSettings AppSettings { get; }
 
         /// <summary>
+        /// Gets the LDAP configurtion (or null, if not jet configured)
+        /// </summary>
+        LdapSettings LdapConfig { get; }
+
+        /// <summary>
         /// Gets whether users can register a new account manually
         /// </summary>
         bool IsRegisterAllowed { get; }
@@ -60,6 +65,12 @@ namespace PlasticNotifyCenter.Data.Managers
                 .FirstOrDefault();
 
         /// <summary>
+        /// Gets the LDAP configurtion (or null, if not jet configured)
+        /// </summary>
+        public LdapSettings LdapConfig =>
+            AppSettings?.LdapConfig;
+
+        /// <summary>
         /// Gets whether users can register a new account manually
         /// </summary>
         public bool IsRegisterAllowed =>
@@ -77,12 +88,12 @@ namespace PlasticNotifyCenter.Data.Managers
         public async Task<int> SaveSettingsAsync(string baseUrl, bool allowRegistration)
         {
             // AppSettings has only one record
-            var appSettings = _dbContext.AppSettings.First();
+            var appSettings = await _dbContext.AppSettings.FirstOrDefaultAsync();
             if (appSettings == null)
             {
                 // Create first record as part of page setup
                 appSettings = new AppSettings(baseUrl);
-                _dbContext.AppSettings.Add(appSettings);
+                await _dbContext.AppSettings.AddAsync(appSettings);
             }
 
             // Update record

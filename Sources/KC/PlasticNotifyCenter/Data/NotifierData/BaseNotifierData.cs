@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
@@ -26,19 +27,27 @@ namespace PlasticNotifyCenter.Data
         public string Version { get; set; }
 
         /// <summary>
+        /// Gets or sets a list of rules this notifier is invoked by
+        /// </summary>
+        public virtual ICollection<RuleNotifier> Rules { get; set; }
+
+        /// <summary>
         /// Creates a new instance
         /// </summary>
         /// <remarks>
         /// Used by EF
         /// </remarks>
         protected BaseNotifierData()
-        { }
+        {
+            Rules = new HashSet<RuleNotifier>();
+        }
 
         /// <summary>
         /// Creates a new instance
         /// </summary>
         /// <param name="displayName">Display name of notifier</param>
         public BaseNotifierData(string displayName)
+            : this()
         {
             Id = Guid.NewGuid().ToString();
             DisplayName = displayName;

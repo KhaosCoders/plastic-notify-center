@@ -195,7 +195,7 @@
                     <select multiple="multiple" class="form-control" id="ruleNotifiers" name="notifiers">
                         @foreach(var notifier in Model.Rule.Notifiers)
                         {
-                        <option value="@notifier.Id" selected>@notifier.DisplayName</option>
+                        <option value="@notifier.Notifier.Id" selected>@notifier.Notifier.DisplayName</option>
                         }
                         @foreach(var notifier in Model.UnusedNotifiers)
                         {

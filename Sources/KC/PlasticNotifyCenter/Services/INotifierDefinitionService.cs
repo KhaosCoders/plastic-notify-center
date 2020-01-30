@@ -1,5 +1,4 @@
 using System;
-using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Notifiers;
 
 namespace PlasticNotifyCenter.Services

@@ -45,8 +45,8 @@
                 <td>
                     @foreach(var notifier in rule.Notifiers)
                     {
-                        <span data-toggle="tooltip" title="@notifier.DisplayName">
-                            @Html.Raw(notifierDefinitions.GetIcon(notifier.GetType()))
+                        <span data-toggle="tooltip" title="@notifier.Notifier.DisplayName">
+                            @Html.Raw(notifierDefinitions.GetIcon(notifier.Notifier.GetType()))
                         </span>
                     }
                 </td>

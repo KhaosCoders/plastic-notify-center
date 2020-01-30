@@ -146,7 +146,9 @@ namespace PlasticNotifyCenter.Notifiers
             _logger.LogDebug("Recipients are: {recipients}", string.Join(", ", recipients.Select(u => u.UserName)));
 
             // send message through each notifier
-            rule.Notifiers.AsParallel().ForAll(async notifier => await SendMessageAsync(notifier, message, recipients));
+            rule.Notifiers
+                .Select(notifier => notifier.Notifier)
+                .AsParallel().ForAll(async notifier => await SendMessageAsync(notifier, message, recipients));
         }
 
         /// <summary>

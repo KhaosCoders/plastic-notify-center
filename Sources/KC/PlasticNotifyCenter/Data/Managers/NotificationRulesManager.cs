@@ -221,7 +221,7 @@ namespace PlasticNotifyCenter.Data.Managers
         public IEnumerable<NotificationRule> Rules =>
             _dbContext.Rules
                 .Include(rule => rule.Owner)
-                .Include(rule => rule.Notifiers)
+                .Include(rule => rule.Notifiers).ThenInclude(notifier => notifier.Notifier)
                 .OrderBy(rule => rule.DisplayName);
 
         /// <summary>
@@ -237,7 +237,7 @@ namespace PlasticNotifyCenter.Data.Managers
         /// <param name="id">ID of requested rule</param>
         public NotificationRule GetRuleById(string id) =>
             _dbContext.Rules
-                .Include(r => r.Notifiers)
+                .Include(r => r.Notifiers).ThenInclude(notifier => notifier.Notifier)
                 .Include(r => r.Recipients).ThenInclude(n => n.User)
                 .Include(r => r.Recipients).ThenInclude(n => n.Role)
                 .FirstOrDefault(r => r.Id.Equals(id));
@@ -248,7 +248,7 @@ namespace PlasticNotifyCenter.Data.Managers
         /// <param name="trigger">Name of trigger type</param>
         public IQueryable<NotificationRule> GetRulesOwnedTiggerType(string trigger) =>
             _dbContext.Rules
-                .Include(r => r.Notifiers)
+                .Include(r => r.Notifiers).ThenInclude(notifier => notifier.Notifier)
                 .Include(r => r.Recipients).ThenInclude(r => r.User)
                 .Include(r => r.Recipients).ThenInclude(r => r.Role)
                 .Where(r => r.Trigger.Equals(trigger) && r.IsActive);
@@ -262,7 +262,7 @@ namespace PlasticNotifyCenter.Data.Managers
         /// </summary>
         /// <param name="rule">Rule notifier are searched for</param>
         public IEnumerable<BaseNotifierData> GetUnassignedNotifiers(NotificationRule rule) =>
-            _dbContext.Notifiers.ToList().Except(rule.Notifiers);
+            _dbContext.Notifiers.ToList().Except(rule.Notifiers.Select(notifier => notifier.Notifier));
 
 
         /// <summary>
@@ -339,6 +339,10 @@ namespace PlasticNotifyCenter.Data.Managers
                 string[] recipients)
         {
             User currentUser = await _userManager.GetUserAsync(owner);
+            if (owner == null || currentUser == null)
+            {
+                throw new InvalidOperationException("Current user unknown");
+            }
 
             NotificationRule rule = await GetOrCreateRuleAsync(id, currentUser);
             if (rule == null)
@@ -363,10 +367,11 @@ namespace PlasticNotifyCenter.Data.Managers
                                   tags);
 
             // Change notifiers
+            _dbContext.RuleNotifiers.RemoveRange(rule.Notifiers);
             rule.Notifiers.Clear();
             foreach (var notifier in _dbContext.Notifiers.Where(n => notifiers.Contains(n.Id)))
             {
-                rule.Notifiers.Add(notifier);
+                rule.Notifiers.Add(new RuleNotifier(notifier));
             }
 
             // Change recipients
@@ -379,6 +384,7 @@ namespace PlasticNotifyCenter.Data.Managers
                 {
                     if (!recipients.Contains("U_" + curRecipient.User.Id))
                     {
+                        _dbContext.NotificationRecipients.Remove(curRecipient);
                         rule.Recipients.Remove(curRecipient);
                     }
                     else
@@ -390,6 +396,7 @@ namespace PlasticNotifyCenter.Data.Managers
                 {
                     if (!recipients.Contains("G_" + curRecipient.Role.Id))
                     {
+                        _dbContext.NotificationRecipients.Remove(curRecipient);
                         rule.Recipients.Remove(curRecipient);
                     }
                     else
@@ -451,17 +458,11 @@ namespace PlasticNotifyCenter.Data.Managers
             }
 
             // First remove all recipients/notifiers (because of foreign-key-constraint)
-            foreach (var recipient in rule.Recipients)
-            {
-                recipient.User = null;
-                recipient.Role = null;
-            }
-            await _dbContext.SaveChangesAsync();
-
+            _dbContext.NotificationRecipients.RemoveRange(rule.Recipients);
             rule.Recipients.Clear();
+
+            _dbContext.RuleNotifiers.RemoveRange(rule.Notifiers);
             rule.Notifiers.Clear();
-            rule.Owner = null;
-            await _dbContext.SaveChangesAsync();
 
             // Then remove the rule
             _dbContext.Rules.Remove(rule);
@@ -512,7 +513,7 @@ namespace PlasticNotifyCenter.Data.Managers
             }
 
             // Deactivate rule
-            rule.IsActive = false;
+            rule.IsActive = isActive;
 
             // Save
             await _dbContext.SaveChangesAsync();

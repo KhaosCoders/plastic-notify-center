@@ -190,9 +190,10 @@ namespace PlasticNotifyCenter.Controllers
             return RedirectToAction("Index", "Rules");
         }
 
-        [HttpGet]
+        [HttpGet("/Rules/Deactivate/{id}")]
         public async Task<IActionResult> DeactivateAsync(string id)
         {
+            _logger.LogDebug("Deactivating rule: {0}", id);
             // Check parameter
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -217,9 +218,10 @@ namespace PlasticNotifyCenter.Controllers
             return RedirectToAction("Index", "Rules");
         }
 
-        [HttpGet]
+        [HttpGet("/Rules/Activate/{id}")]
         public async Task<IActionResult> ActivateAsync(string id)
         {
+            _logger.LogDebug("Activating rule: {0}", id);
             // Check parameter
             if (string.IsNullOrWhiteSpace(id))
             {

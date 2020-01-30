@@ -77,7 +77,7 @@ namespace PlasticNotifyCenter.Data
         /// <summary>
         /// Gets or sets a list of notifiers invoked by this rule
         /// </summary>
-        public virtual ICollection<BaseNotifierData> Notifiers { get; set; }
+        public virtual ICollection<RuleNotifier> Notifiers { get; set; }
 
         /// <summary>
         /// Gets or sets a list of recipients informed by this rule
@@ -111,7 +111,7 @@ namespace PlasticNotifyCenter.Data
         /// </remarks>
         private NotificationRule()
         {
-            this.Notifiers = new HashSet<BaseNotifierData>();
+            this.Notifiers = new HashSet<RuleNotifier>();
             this.Recipients = new HashSet<NotificationRecipient>();
         }
 

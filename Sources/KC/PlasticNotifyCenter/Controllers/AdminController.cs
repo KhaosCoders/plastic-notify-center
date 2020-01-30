@@ -52,8 +52,8 @@ namespace PlasticNotifyCenter.Controllers
 
         #region Index
 
-        [HttpGet("/Admin/Index")]
-        public async Task<IActionResult> IndexAsync()
+        [HttpGet("/Admin")]
+        public async Task<IActionResult> GeneralAsync()
         {
             // Check authorization
             if (!(await User.IsAdminAsync(_authorizationService)))
@@ -65,8 +65,8 @@ namespace PlasticNotifyCenter.Controllers
             return View(_appSettingsManager.AppSettings);
         }
 
-        [HttpPost("/Admin/Index")]
-        public async Task<IActionResult> SaveIndexAsync([FromForm] string baseUrl, [FromForm] string allowRegistration)
+        [HttpPost("/Admin")]
+        public async Task<IActionResult> SaveGeneralAsync([FromForm] string baseUrl, [FromForm] string allowRegistration)
         {
             // Check authorization
             if (!(await User.IsAdminAsync(_authorizationService)))
@@ -139,7 +139,7 @@ namespace PlasticNotifyCenter.Controllers
             return View("edit_user", new EditUserViewModel(user, false));
         }
 
-        [HttpPost("/Admin/User/{id}")]
+        [HttpPost("/Admin/User/{id?}")]
         public async Task<IActionResult> SaveUserAsync(
                                         [FromRoute] string id,
                                         [FromForm] string name,
@@ -174,7 +174,7 @@ namespace PlasticNotifyCenter.Controllers
             return RedirectToAction("Users", "Admin");
         }
 
-        [HttpDelete("/Admin/User")]
+        [HttpPost("/Admin/DelUser")]
         public async Task<IActionResult> DeleteUserAsync([FromForm] string id)
         {
             // Check authorization
@@ -283,7 +283,7 @@ namespace PlasticNotifyCenter.Controllers
             ));
         }
 
-        [HttpPost("/Admin/Group/{id}")]
+        [HttpPost("/Admin/Group/{id?}")]
         public async Task<IActionResult> SaveGroupAsync(
                                             [FromRoute] string id,
                                             [FromForm] string name,
@@ -313,7 +313,7 @@ namespace PlasticNotifyCenter.Controllers
             return RedirectToAction("Groups", "Admin");
         }
 
-        [HttpDelete("/Admin/Group")]
+        [HttpPost("/Admin/DelGroup")]
         public async Task<IActionResult> DeleteGroupAsync([FromForm] string id)
         {
             // Check authorization

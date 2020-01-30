@@ -41,11 +41,10 @@ namespace PlasticNotifyCenter.Services.Background
             {
                 // create new db context
                 using var scope = _serviceProvider.CreateScope();
-                using PncDbContext dbContext = new PncDbContext(scope.ServiceProvider.GetRequiredService<DbContextOptions<PncDbContext>>());
+                IAppSettingsManager appSettingsManager = scope.ServiceProvider.GetRequiredService<IAppSettingsManager>();
 
                 // Get settings and start sync
-                AppSettings appSettings = dbContext.AppSettings.FirstOrDefault();
-                LdapSettings ldapConfig = appSettings.LdapConfig;
+                LdapSettings ldapConfig = appSettingsManager.LdapConfig;
 
                 if (!string.IsNullOrWhiteSpace(ldapConfig?.LdapDcHost))
                 {

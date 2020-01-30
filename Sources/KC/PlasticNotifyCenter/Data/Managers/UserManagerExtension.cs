@@ -34,8 +34,8 @@ namespace PlasticNotifyCenter.Data.Managers
         /// <param name="userManager">UserManager instance</param>
         public static IEnumerable<User> GetOrderedUsers(this UserManager<User> userManager) =>
             userManager.Users
-                    .Where(user => !user.IsDeleted)
                     .ToList()
+                    .Where(user => !user.IsDeleted)
                     .OrderBy(user => user.Origin == Origins.Local ? 0 : 1)
                     .ThenBy(user => user.UserName);
 
@@ -217,7 +217,7 @@ namespace PlasticNotifyCenter.Data.Managers
         public static async Task SetRoleUsersAsync(this UserManager<User> userManager, string roleName, string[] userIDs)
         {
             // Cycle through all users
-            foreach (var user in userManager.Users.Where(user => !user.IsDeleted))
+            foreach (var user in userManager.Users.ToList().Where(user => !user.IsDeleted))
             {
                 // Has user the role currently?
                 var inRole = await userManager.IsInRoleAsync(user, roleName);

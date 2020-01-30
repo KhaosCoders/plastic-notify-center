@@ -40,6 +40,17 @@ namespace PlasticNotifyCenter.Data
         public DbSet<NotificationRule> Rules { get; set; }
 
         /// <summary>
+        /// Gets a set of RuleNotifier entries
+        /// </summary>
+        public DbSet<RuleNotifier> RuleNotifiers { get; set; }
+
+        /// <summary>
+        /// Gets a set of NotificationRecipient entries
+        /// </summary>
+        /// <value></value>
+        public DbSet<NotificationRecipient> NotificationRecipients { get; set; }
+
+        /// <summary>
         /// Gets a set of NotificationHistory entries
         /// </summary>
         public DbSet<NotificationHistory> NotificationHistory { get; set; }
@@ -62,9 +73,6 @@ namespace PlasticNotifyCenter.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            // No root type in data model
-            builder.Entity<NotificationRecipient>();
-
             // Find all notifier data classes, derived from BaseNotifierData
             // and add them to the model
             Console.WriteLine("Looking for NotifierData types...");

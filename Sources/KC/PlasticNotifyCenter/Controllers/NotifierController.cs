@@ -39,7 +39,7 @@ namespace PlasticNotifyCenter.Controllers
 
         #endregion
 
-        [HttpGet("/Notifier/{id}")]
+        [HttpGet("/Notifier/{id?}")]
         public async Task<IActionResult> IndexAsync([FromRoute] string id)
         {
             // Check authorization
@@ -138,7 +138,7 @@ namespace PlasticNotifyCenter.Controllers
             }
         }
 
-        [HttpDelete("/Notifier/{id}")]
+        [HttpGet("/Notifier/Delete/{id}")]
         public async Task<IActionResult> DeleteAsync([FromRoute] string id)
         {
             // Check authorization

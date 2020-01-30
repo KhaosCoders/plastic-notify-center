@@ -35,7 +35,7 @@ namespace PlasticNotifyCenter.Controllers
 
         #region Start page (Index)
 
-        [HttpGet("/Index")]
+        [HttpGet("/")]
         public IActionResult Index()
         {
             // Show view

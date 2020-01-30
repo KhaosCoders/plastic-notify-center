@@ -25,7 +25,6 @@ namespace PlasticNotifyCenter.Data
         /// <summary>
         /// Gets or sets the relevant rule
         /// </summary>
-        /// <value></value>
         public NotificationRule NotificationRule { get; set; }
 
         /// <summary>

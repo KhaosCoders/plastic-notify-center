@@ -57,6 +57,7 @@ namespace PlasticNotifyCenter.Data
         {
             BaseUrl = baseUrl;
             AllowRegistration = true;
+            LdapConfig = new LdapSettings();
         }
     }
 }
