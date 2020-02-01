@@ -48,22 +48,11 @@ namespace PlasticNotifyCenter.Mail
             message.SubjectEncoding = Encoding.UTF8;
             message.IsBodyHtml = true;
             message.BodyEncoding = Encoding.UTF8;
-            message.Body =
-@"<html>
-<head><title>SMTP Test</title></head>
-<body>
-<h1>Success</h1>
-<p>
-Hi,
-</p>
-<p>
-this is your PlasticNotifyCenter trying to send you an email.
-</p>
-<p>
-Looks like it works =)
-</p>
-</body>
-</html>";
+            message.Body = DefaultTemplate.Html
+                                .Replace("%PNC_RULESURL%", "")
+                                .Replace("%PNC_TITLE%", "Great Success")
+                                .Replace("%PNC_BODY%", "<p>Hi there,</p><p>this is your Plastic-Notify-Center =)</p><p>Looks like the SMTP configuration is working. YEAH!</p>")
+                                .Replace("%PNC_TAGS%", "Awesome");
 
             // Send the message
             client.Send(message);
