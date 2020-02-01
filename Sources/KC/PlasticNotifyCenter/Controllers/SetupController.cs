@@ -251,7 +251,7 @@ namespace PlasticNotifyCenter.Controllers
             await _userManager.AddToRoleAsync(adminUser, Roles.UserRole);
 
             // Store basic app settings
-            await _appSettingsManager.SaveSettingsAsync(config.BaseUrl, true, "");
+            await _appSettingsManager.SaveSettingsAsync(config.BaseUrl, true, DefaultTemplate.Html);
 
             // Store SMTP notifier
             await _notifierManager.AddNotifierAsync(SmtpNotifierData.CreateFrom(config.Smtp));

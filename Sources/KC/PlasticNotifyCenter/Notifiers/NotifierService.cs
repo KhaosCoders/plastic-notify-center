@@ -33,10 +33,10 @@ namespace PlasticNotifyCenter.Notifiers
                                 IServiceProvider serviceProvider,
                                 INotificationQueue notificationQueue)
         {
-            this._logger = logger;
-            this._conditionEval = conditionEval;
-            this._serviceProvider = serviceProvider;
-            this._notificationQueue = notificationQueue;
+            _logger = logger;
+            _conditionEval = conditionEval;
+            _serviceProvider = serviceProvider;
+            _notificationQueue = notificationQueue;
         }
 
         #endregion
@@ -141,6 +141,16 @@ namespace PlasticNotifyCenter.Notifiers
             }
             _logger.LogDebug("The message is: {message}", message.ToString());
 
+            // Apply global template
+            if (rule.UseGlobalMessageTemplate)
+            {
+                using var scope = _serviceProvider.CreateScope();
+                IAppSettingsManager appSettingsManager = scope.ServiceProvider.GetRequiredService<IAppSettingsManager>();
+                AppSettings appSettings = appSettingsManager.AppSettings;
+
+                message.ApplyTemplate(appSettings.HtmlMessageTemplate, $"{appSettings.BaseUrl}/Rules");
+            }
+
             // Resolv groups and get all recipient users
             var recipients = await Task.Run(() => GetRecipientUsers(rule));
             _logger.LogDebug("Recipients are: {recipients}", string.Join(", ", recipients.Select(u => u.UserName)));
@@ -192,9 +202,9 @@ namespace PlasticNotifyCenter.Notifiers
         /// <param name="rule">Notification rule configuration data</param>
         /// <param name="call">Trigger call information</param>
         private Message PrepareMessage(NotificationRule rule, TriggerCall call) =>
-            new Message()
+            new Message(rule.NotificationBodyType)
             {
-                // Replace placeholers in all fields of the message
+                // Replace PLASTIC-placeholers in all fields of the message
                 Title = TextHelper.ReplaceVars(rule.NotificationTitle ?? string.Empty, call.EnvironmentVars),
                 Body = TextHelper.ReplaceVars(rule.NotificationBody ?? string.Empty, call.EnvironmentVars),
                 Tags = TextHelper.ReplaceVars(rule.NotificationTags ?? string.Empty, call.EnvironmentVars)

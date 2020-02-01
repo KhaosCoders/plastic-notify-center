@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text;
+using PlasticNotifyCenter.Data;
 
 namespace PlasticNotifyCenter.Notifiers
 {
@@ -19,9 +20,28 @@ namespace PlasticNotifyCenter.Notifiers
         public string Body { get; set; }
 
         /// <summary>
+        /// Gets or sets the type of the message body
+        /// </summary>
+        public MessageBodyType BodyType { get; set; }
+
+        /// <summary>
         /// Gets or sets a list of tags attached to the message
         /// </summary>
         public string[] Tags { get; set; }
+
+        /// <summary>
+        /// Gets or sets a message with applied template
+        /// </summary>
+        public string TemplatedMessage { get; set; }
+
+        /// <summary>
+        /// Create a new instance
+        /// </summary>
+        /// <param name="type">Type of the message body</param>
+        public Message(MessageBodyType type)
+        {
+            BodyType = type;
+        }
 
         /// <summary>
         /// Combines all message fields to a single string
@@ -43,5 +63,17 @@ namespace PlasticNotifyCenter.Notifiers
             }
             return sb.ToString();
         }
+
+        /// <summary>
+        /// Applies a global template to the message
+        /// </summary>
+        /// <param name="template">Template</param>
+        /// <param name="rulesUrl">URL to rules page</param>
+        public void ApplyTemplate(string template, string rulesUrl) =>
+            TemplatedMessage = template
+                .Replace("%PNC_RULESURL%", rulesUrl)
+                .Replace("%PNC_TITLE%", Title)
+                .Replace("%PNC_BODY%", Body)
+                .Replace("%PNC_TAGS%", string.Join(", ", Tags));
     }
 }

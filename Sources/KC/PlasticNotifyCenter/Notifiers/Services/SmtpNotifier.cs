@@ -85,8 +85,9 @@ namespace PlasticNotifyCenter.Notifiers
                 mailMessage.Subject = message.Title;
                 mailMessage.SubjectEncoding = Encoding.UTF8;
                 mailMessage.BodyEncoding = Encoding.UTF8;
-                mailMessage.IsBodyHtml = message.Body.StartsWith("<html", System.StringComparison.InvariantCultureIgnoreCase);
-                mailMessage.Body = message.Body;
+                mailMessage.IsBodyHtml = message.BodyType == MessageBodyType.HTML;
+                // Use templated message or only body
+                mailMessage.Body = message.TemplatedMessage ?? message.Body;
 
                 // Send the message
                 client.Send(mailMessage);

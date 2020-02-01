@@ -33,7 +33,7 @@
                 <label for="htmlMessageTemplate">HTML Message Template</label>
                 <textarea type="text" class="form-control" id="htmlMessageTemplate" name="htmlMessageTemplate" aria-describedby="htmlMessageTemplateHelp"
                     placeholder="Enter a HTML message template" rows="8">@Html.Raw(Model.HtmlMessageTemplate)</textarea>
-                <small id="htmlMessageTemplateHelp" class="form-text text-muted">This template will be applied to all HTML messages. You can use these three placeholders: <i>%TITLE%, %BODY% and %TAGS%</i></small>
+                <small id="htmlMessageTemplateHelp" class="form-text text-muted">This template will be applied to all HTML messages. You can use these placeholders: <i>%PNC_TITLE%, %PNC_BODY%, %PNC_TAGS% and %PNC_RULESURL%</i></small>
                 <div id="htmlMessageTemplateValidator" style="display: none;"></div>
             </div>
 

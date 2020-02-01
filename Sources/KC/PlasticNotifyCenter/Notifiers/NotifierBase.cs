@@ -24,7 +24,8 @@ namespace PlasticNotifyCenter.Notifiers
 
         private readonly INotificationHistoryManager _notificationHistoryManager;
 
-        public NotifierBase(ILogger _logger, INotificationHistoryManager notificationHistoryManager)
+        public NotifierBase(ILogger _logger,
+                            INotificationHistoryManager notificationHistoryManager)
         {
             Logger = _logger;
             _notificationHistoryManager = notificationHistoryManager;
