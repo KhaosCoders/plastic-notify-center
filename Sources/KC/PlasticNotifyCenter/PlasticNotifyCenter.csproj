@@ -3,8 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UserSecretsId>aspnet-PlasticNotifyCenter-20B75D38-7405-4952-A4F5-0DB52E3CED53</UserSecretsId>
+    <ApplicationIcon>wwwroot/favicon.ico</ApplicationIcon>
   </PropertyGroup>
-
 
   <ItemGroup>
     <Content Update="app.db" CopyToOutputDirectory="PreserveNewest" />
