@@ -3,9 +3,22 @@
 
 This is a simple application trying to ease the pain of setting up notifications for events from your Plastic SCM source control server.
 
-## Supported notifiers
+## Supported Notifiers
 - [x] SMTP Mail
-- [ ] prepared for more
+- [ ] add your own
+
+The app is prepared to handle multiple types of notifiers. Please fork this project and help to implement more of them!
+
+## Main Features
+- Manage users & groups (with automatic LDAP import)
+- Manage notifiers (get notifications anyway you like)
+- Manage notification rules
+    - Setup notifications for different triggers from Plastic SCM
+    - Use filters to send only important notifications
+    - Use variables supplied by Plastic SCM triggers
+    - Choose different notifiers for your messages
+    - Choose users & groups as recipients
+- Send notifications automatically when a Plastic SCM trigger is fired
 
 ## Requirements
 
