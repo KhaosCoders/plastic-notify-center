@@ -91,6 +91,8 @@ namespace PlasticNotifyCenter.Data.Managers
         /// <param name="filter">Advanced filter</param>
         /// <param name="title">Message title</param>
         /// <param name="message">Message body</param>
+        /// <param name="bodyType">Type of message body</param>
+        /// <param name="useTemplate">Whether the global template should be applied</param>
         /// <param name="tags">Message tags</param>
         /// <param name="notifiers">List of assigned notifiers</param>
         /// <param name="recipients">List of assigned recipients</param>
@@ -104,6 +106,8 @@ namespace PlasticNotifyCenter.Data.Managers
                 string filter,
                 string title,
                 string message,
+                MessageBodyType bodyType,
+                bool useTemplate,
                 string tags,
                 string[] notifiers,
                 string[] recipients);
@@ -321,6 +325,8 @@ namespace PlasticNotifyCenter.Data.Managers
         /// <param name="filter">Advanced filter</param>
         /// <param name="title">Message title</param>
         /// <param name="message">Message body</param>
+        /// <param name="bodyType">Type of message body</param>
+        /// <param name="useTemplate">Whether the global template should be applied</param>
         /// <param name="tags">Message tags</param>
         /// <param name="notifiers">List of assigned notifiers</param>
         /// <param name="recipients">List of assigned recipients</param>
@@ -334,6 +340,8 @@ namespace PlasticNotifyCenter.Data.Managers
                 string filter,
                 string title,
                 string message,
+                MessageBodyType bodyType,
+                bool useTemplate,
                 string tags,
                 string[] notifiers,
                 string[] recipients)
@@ -364,6 +372,8 @@ namespace PlasticNotifyCenter.Data.Managers
                                   filter,
                                   title,
                                   message,
+                                  bodyType,
+                                  useTemplate,
                                   tags);
 
             // Change notifiers

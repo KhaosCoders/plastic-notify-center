@@ -92,14 +92,26 @@ namespace PlasticNotifyCenter.Data
         /// <param name="filter">Advaced filter</param>
         /// <param name="title">Message title</param>
         /// <param name="message">Message body</param>
+        /// <param name="bodyType">Type of message body</param>
+        /// <param name="useTemplate">Whether the global template should be applied</param>
         /// <param name="tags">Message tags</param>
-        public void UpdateProperties(string name, string trigger, string filter, string title, string message, string tags)
+        public void UpdateProperties(
+                            string name,
+                            string trigger,
+                            string filter,
+                            string title,
+                            string message,
+                            MessageBodyType bodyType,
+                            bool useTemplate,
+                            string tags)
         {
             DisplayName = name;
             Trigger = trigger;
             AdvancedFilter = filter;
             NotificationTitle = title;
             NotificationBody = message;
+            NotificationBodyType = bodyType;
+            UseGlobalMessageTemplate = useTemplate;
             NotificationTags = tags;
         }
 

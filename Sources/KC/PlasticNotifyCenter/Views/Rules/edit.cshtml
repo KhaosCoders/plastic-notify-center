@@ -2,6 +2,7 @@
     ViewData["Title"] = "Edit Rule";
 }
 @using PlasticNotifyCenter.Models
+@using PlasticNotifyCenter.Data
 @model EditRuleViewModel
 @section scripts {
     <script src="~/js/jquery.quicksearch.js" asp-append-version="true"></script>
@@ -176,6 +177,38 @@
                         You may use all the variables supplied by the trigger. Just like in the title above.
                     </small>
                     <div id="ruleMessageValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label for="ruleBodyType" class="col-sm-2 col-form-label">Message Type</label>
+                <div class="col-sm-10">
+                    <select class="form-control" id="ruleBodyType" name="bodyType" aria-describedby="ruleBodyTypeHelp" required>
+                         @if(Model.Rule.NotificationBodyType == MessageBodyType.Plain)
+                         {
+                             <option value="Plain" selected>Plain Text</option>
+                             <option value="HTML">HTML</option>
+                         }
+                         else
+                         {
+                             <option value="Plain">Plain Text</option>
+                             <option value="HTML" selected>HTML</option>
+                         }
+                    </select>
+                    <small id="ruleBodyTypeHelp" class="form-text text-muted">
+                        Some notifiers support HTML messages with better format support. Others only support plain text.
+                    </small>
+                    <div id="ruleBodyTypeValidator" style="display: none;"></div>
+                </div>
+            </div>
+            <div class="form-group text-left row">
+                <label class="col-sm-2 col-form-label">Template</label>
+                <div class="col-sm-10">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="useTemplate" name="useTemplate" aria-describedby="useTemplateHelp" @((Model?.Rule?.UseGlobalMessageTemplate ?? true) ? "checked" : "")>
+                        <label class="form-check-label" for="useTemplate">Use global message template</label>
+                    </div>
+                    <small id="useTemplateHelp" class="form-text text-muted">You can setup a global template for messages in the administration section.</small>
+                    <div id="useTemplateValidator" style="display: none;"></div>
                 </div>
             </div>
             <div class="form-group text-left row">

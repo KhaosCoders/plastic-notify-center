@@ -121,6 +121,8 @@ namespace PlasticNotifyCenter.Controllers
             [FromForm] string trigger,
             [FromForm] string filter,
             [FromForm] string title,
+            [FromForm] MessageBodyType bodyType,
+            [FromForm] string useTemplate,
             [FromForm] string message,
             [FromForm] string tags,
             [FromForm] string[] notifiers,
@@ -145,6 +147,8 @@ namespace PlasticNotifyCenter.Controllers
                     filter,
                     title,
                     message,
+                    bodyType,
+                    useTemplate == "on",
                     tags,
                     notifiers,
                     recipients
