@@ -262,7 +262,7 @@ namespace PlasticNotifyCenter.Services
             // Try to get all the attributes
             foreach (string attr in attributes)
             {
-                string value = user.Properties[attr].Value.ToString();
+                string value = user.Properties[attr]?.Value?.ToString();
                 _logger.LogDebug("Testing LDAP Attribute '{0}' value is: {1}", attr, value);
                 if (string.IsNullOrWhiteSpace(value))
                 {
