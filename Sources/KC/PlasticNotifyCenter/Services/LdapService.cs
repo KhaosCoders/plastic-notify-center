@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Data;
 using System;
+using System.DirectoryServices.AccountManagement;
 
 namespace PlasticNotifyCenter.Services
 {
@@ -283,6 +284,22 @@ namespace PlasticNotifyCenter.Services
             }
 
             return true;
+        }
+
+        #endregion
+
+        #region Password check
+
+        
+        /// <summary>
+        /// Validates a user/password combination via LDAP
+        /// </summary>
+        /// <param name="user">Name of user</param>
+        /// <param name="password">Password</param>
+        public bool CheckPassword(string user, string password)
+        {
+            using PrincipalContext pc = new PrincipalContext(ContextType.Domain);
+            return pc.ValidateCredentials(user, password);
         }
 
         #endregion

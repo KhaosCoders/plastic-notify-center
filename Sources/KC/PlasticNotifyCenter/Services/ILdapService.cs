@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using PlasticNotifyCenter.Data;
 using PlasticNotifyCenter.Models;
 
@@ -55,5 +56,12 @@ namespace PlasticNotifyCenter.Services
         /// </summary>
         /// <param name="ldapConfig">LDAP configuration</param>
         LdapGroup[] GetGroups(LdapSettings ldapConfig);
+
+        /// <summary>
+        /// Validates a user/password combination via LDAP
+        /// </summary>
+        /// <param name="user">Name of user</param>
+        /// <param name="password">Password</param>
+        bool CheckPassword(string user, string password);
     }
 }

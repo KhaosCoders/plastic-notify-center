@@ -66,6 +66,7 @@ namespace PlasticNotifyCenter
             // Identity
             services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddRoles<Role>()
+                .AddUserManager<AppUserManager>()
                 .AddEntityFrameworkStores<PncDbContext>();
 
             // Controllers
