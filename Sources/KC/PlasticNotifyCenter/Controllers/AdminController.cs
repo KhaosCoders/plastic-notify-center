@@ -13,6 +13,7 @@ using PlasticNotifyCenter.Controllers.Api;
 using System;
 using PlasticNotifyCenter.Data.Managers;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace PlasticNotifyCenter.Controllers
 {
@@ -263,14 +264,20 @@ namespace PlasticNotifyCenter.Controllers
             }
 
             // Find role by ID
-            var role = await _roleManager.FindByIdAsync(id);
+            var role = await _roleManager.Roles
+                                .Include(role => role.UserRoles).ThenInclude(ur => ur.User)
+                                .FirstOrDefaultAsync(role => role.Id == id);
             if (role == null)
             {
                 return NotFound();
             }
 
             // User with this role
-            var usersInRole = _userManager.GetOrderedUsersOfRole(role).ToArray();
+            var usersInRole = role.UserRoles
+                    .Select(ur => ur.User)
+                    .OrderBy(user => user.IsDeleted ? 1 : 0)
+                    .ThenBy(user => user.UserName)
+                    .ToArray();
 
             // Users without this role
             var usersNotInRole = _userManager

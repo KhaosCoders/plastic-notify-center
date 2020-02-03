@@ -15,19 +15,7 @@ namespace PlasticNotifyCenter.Data.Managers
     public static class UserManagerExtension
     {
         #region User lists
-
-        /// <summary>
-        /// Returns a ordered list of users assigned to a role
-        /// </summary>
-        /// <param name="userManager">UserManager instance</param>
-        /// <param name="role">Role for which the users are requested</param>
-        public static IEnumerable<User> GetOrderedUsersOfRole(this UserManager<User> userManager, Role role) =>
-            userManager.Users
-                .ToList()
-                .Where(user => userManager.IsInRoleAsync(user, role.Name).Result)
-                .OrderBy(user => user.IsDeleted ? 1 : 0)
-                .ThenBy(user => user.UserName);
-
+        
         /// <summary>
         /// Returns an ordered list or active users
         /// </summary>

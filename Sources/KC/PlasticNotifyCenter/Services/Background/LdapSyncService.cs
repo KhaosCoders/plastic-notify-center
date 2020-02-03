@@ -89,6 +89,7 @@ namespace PlasticNotifyCenter.Services.Background
             // create new db context
             using var scope = _serviceProvider.CreateScope();
             using UserManager<User> userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+            using RoleManager<Role> roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
 
             // all known users
             var allUsers = userManager.Users.ToList();
@@ -98,9 +99,14 @@ namespace PlasticNotifyCenter.Services.Background
                 .ForEach(ldapGroup =>
                 {
                     // All users in this LDAP group
-                    var usersInGroup = allUsers
-                        .Where(user => userManager.IsInRoleAsync(user, ldapGroup.Name).Result)
-                        .ToArray();
+                    var role = roleManager.Roles
+                        .Include(role => role.UserRoles).ThenInclude(ur => ur.User)
+                        .FirstOrDefault(role => role.LdapGuid == ldapGroup.LdapGuid);
+                    if (role == null)
+                    {
+                        return;
+                    }
+                    var usersInGroup = role.UserRoles.Select(ur => ur.User).ToArray();
 
                     // Remove old users
                     usersInGroup
