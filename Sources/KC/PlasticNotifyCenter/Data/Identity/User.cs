@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +28,11 @@ namespace PlasticNotifyCenter.Data.Identity
         /// </summary>
         [NotMapped]
         public bool IsDeleted => LockoutEnd > DateTime.Now;
+
+        /// <summary>
+        /// Gets or sets a list of roles the user is assigned to
+        /// </summary>
+        public virtual ICollection<UserRole> UserRoles { get; set; }
 
         /// <summary>
         /// Sets all properties of a user

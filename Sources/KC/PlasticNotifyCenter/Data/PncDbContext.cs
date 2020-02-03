@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using PlasticNotifyCenter.Data.Identity;
@@ -10,7 +11,9 @@ namespace PlasticNotifyCenter.Data
     /// <summary>
     /// Data context for this app
     /// </summary>
-    public class PncDbContext : IdentityDbContext<User, Role, string>
+    public class PncDbContext : IdentityDbContext<User, Role, string,
+                                IdentityUserClaim<string>, UserRole, IdentityUserLogin<string>,
+                                IdentityRoleClaim<string>, IdentityUserToken<string>>
     {
         #region DbSets
 
@@ -89,6 +92,25 @@ namespace PlasticNotifyCenter.Data
                 });
 
             base.OnModelCreating(builder);
+
+            // Setup navigational user / role properties
+            builder.Entity<User>(b =>
+            {
+                // User -> Roles
+                b.HasMany(e => e.UserRoles)
+                    .WithOne(e => e.User)
+                    .HasForeignKey(ur => ur.UserId)
+                    .IsRequired();
+            });
+
+            builder.Entity<Role>(b =>
+            {
+                // Role -> Users
+                b.HasMany(e => e.UserRoles)
+                    .WithOne(e => e.Role)
+                    .HasForeignKey(ur => ur.RoleId)
+                    .IsRequired();
+            });
         }
 
         #endregion
