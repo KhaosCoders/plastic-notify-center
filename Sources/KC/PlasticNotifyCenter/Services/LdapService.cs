@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using PlasticNotifyCenter.Models;
 using PlasticNotifyCenter.Data;
+using System;
 
 namespace PlasticNotifyCenter.Services
 {
@@ -48,16 +49,20 @@ namespace PlasticNotifyCenter.Services
 
                 // Obtain attribute values
                 string userName = userEntry.Properties[ldapConfig.LdapUserNameAttr]?.Value?.ToString();
-                string guid = userEntry.Properties[ldapConfig.LdapUserGuidAttr]?.Value?.ToString();
+                object guidData = userEntry.Properties[ldapConfig.LdapUserGuidAttr]?.Value;
                 string email = userEntry.Properties[ldapConfig.LdapUserEmailAttr]?.Value?.ToString();
 
+
                 // Check values for completeness
-                if (string.IsNullOrWhiteSpace(userName)
-                    || string.IsNullOrWhiteSpace(email)
-                    || string.IsNullOrWhiteSpace(guid))
+                if (guidData == null
+                    || !(guidData is byte[])
+                    || string.IsNullOrWhiteSpace(userName)
+                    || string.IsNullOrWhiteSpace(email))
                 {
                     continue;
                 }
+
+                string guid = (new Guid((byte[])guidData)).ToString();
 
                 // Add new user to result list
                 users.Add(new LdapUser(guid, userName, email));
@@ -92,14 +97,17 @@ namespace PlasticNotifyCenter.Services
                 }
 
                 // Obtain attributes
-                string guid = groupEntry.Properties[ldapConfig.LdapGroupGuidAttr]?.Value?.ToString();
+                object guidData = groupEntry.Properties[ldapConfig.LdapGroupGuidAttr]?.Value;
                 string groupName = groupEntry.Properties[ldapConfig.LdapGroupNameAttr]?.Value?.ToString();
-                if (string.IsNullOrWhiteSpace(guid)
+
+                if (guidData == null
+                    || !(guidData is byte[])
                     || string.IsNullOrWhiteSpace(groupName))
                 {
                     continue;
                 }
 
+                string guid = (new Guid((byte[])guidData)).ToString();
                 var group = new LdapGroup(guid, groupName);
 
                 // Get all members
@@ -112,7 +120,7 @@ namespace PlasticNotifyCenter.Services
                 foreach (object memberObj in members)
                 {
                     string userDN = memberObj.ToString();
-                    if (string.IsNullOrWhiteSpace(userDN) || !userDN.Contains(ldapConfig.LdapBaseDN))
+                    if (string.IsNullOrWhiteSpace(userDN) || !userDN.Contains(ldapConfig.LdapBaseDN, StringComparison.CurrentCultureIgnoreCase))
                     {
                         // Skip users not part of the LDAP service
                         continue;
@@ -124,15 +132,18 @@ namespace PlasticNotifyCenter.Services
                     {
                         continue;
                     }
-
-                    string userGuid = user.Properties[ldapConfig.LdapUserGuidAttr]?.Value?.ToString();
+                    
+                    object userGuidData = user.Properties[ldapConfig.LdapUserGuidAttr]?.Value;
                     string userName = user.Properties[ldapConfig.LdapUserNameAttr]?.Value?.ToString();
-                    if (string.IsNullOrWhiteSpace(userGuid)
+                    if (userGuidData == null
+                        || !(userGuidData is byte[])
                         || string.IsNullOrWhiteSpace(userName))
                     {
                         // Skip users without GUID or name
                         continue;
                     }
+
+                    string userGuid = (new Guid((byte[])userGuidData)).ToString();
 
                     _logger.LogDebug("{0} (Guid: {1}) is in group: {2}", userName, userGuid, groupName);
                     group.UserGuids.Add(userGuid);
