@@ -243,7 +243,7 @@ namespace PlasticNotifyCenter.Data.Managers
             _dbContext.Rules
                 .Include(r => r.Notifiers).ThenInclude(notifier => notifier.Notifier)
                 .Include(r => r.Recipients).ThenInclude(n => n.User)
-                .Include(r => r.Recipients).ThenInclude(n => n.Role)
+                .Include(r => r.Recipients).ThenInclude(n => n.Role).ThenInclude(r => r.UserRoles).ThenInclude(ur => ur.User)
                 .FirstOrDefault(r => r.Id.Equals(id));
 
         /// <summary>
@@ -254,7 +254,7 @@ namespace PlasticNotifyCenter.Data.Managers
             _dbContext.Rules
                 .Include(r => r.Notifiers).ThenInclude(notifier => notifier.Notifier)
                 .Include(r => r.Recipients).ThenInclude(r => r.User)
-                .Include(r => r.Recipients).ThenInclude(r => r.Role)
+                .Include(r => r.Recipients).ThenInclude(r => r.Role).ThenInclude(r => r.UserRoles).ThenInclude(ur => ur.User)
                 .Where(r => r.Trigger.Equals(trigger) && r.IsActive);
 
         #endregion

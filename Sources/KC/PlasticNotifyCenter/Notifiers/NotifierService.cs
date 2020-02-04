@@ -235,8 +235,9 @@ namespace PlasticNotifyCenter.Notifiers
                         // If role (group) was deleted
                         ? null
                         // Resolve group
-                        : allUsers
-                            .Where(u => userManager.IsInRoleAsync(u, recipient.Role.Name).Result)
+                        : recipient.Role
+                            .UserRoles
+                            .Select(ur => ur.User)
                             .ToArray())
                 // Only active users
                 .Where(user => user != null && !user.IsDeleted)

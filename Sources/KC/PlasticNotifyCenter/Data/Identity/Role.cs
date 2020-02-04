@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 using PlasticNotifyCenter.Models;
 
@@ -29,6 +30,11 @@ namespace PlasticNotifyCenter.Data.Identity
         /// Gets or sets whether the role (group) was deleted
         /// </summary>
         public bool IsDeleted { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a list of users assigned to the role
+        /// </summary>
+        public virtual ICollection<UserRole> UserRoles { get; set; }
 
         /// <summary>
         /// Sets all properties of a role (group)

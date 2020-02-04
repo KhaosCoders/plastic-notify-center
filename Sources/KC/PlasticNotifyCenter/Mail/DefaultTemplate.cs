@@ -111,15 +111,17 @@ namespace PlasticNotifyCenter.Mail
 				</td>
 			</tr>
 			<tr>
-				<td bgcolor=""#7D3C98"" style=""padding: 30px 30px 30px 30px; color: #ffffff;"">
+				<td bgcolor=""#7D3C98"" style=""padding: 30px 30px 30px 30px;"">
 					<table cellpadding=""0"" cellspacing=""0"" width=""100%"">
 						<tr>
 							<td width=""75%"">
-								Send by <strong>Plastic-Notify-Center</strong><br/>
-								<small>
-									Manage your notification rules <a href=""%PNC_RULESURL%"" style=""color: #ffffff; font-weight: bold;"">here</a><br/>
-									Or ask your message coordinator
-								</small>
+                                <p style=""color: #ffffff;"">
+                                    Send by <strong>Plastic-Notify-Center</strong><br/>
+                                    <small>
+                                        Manage your notification rules <a href=""%PNC_RULESURL%"" style=""color: #ffffff; font-weight: bold;"">here</a><br/>
+                                        Or ask your message coordinator
+                                    </small>
+                                </p>
 							</td>
 							<td>
 							<div style=""background:#FF5733; text-align:center; border-radius: 4px; padding: 8px 4px 8px 4px;"">

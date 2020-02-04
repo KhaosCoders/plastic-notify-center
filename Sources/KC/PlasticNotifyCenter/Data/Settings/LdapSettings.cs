@@ -55,7 +55,7 @@ namespace PlasticNotifyCenter.Data
         /// <summary>
         /// Gets or sets the attribute name for user GUIDs
         /// </summary>
-        public string LdapUserGuidAttr { get; set; } = "GUID";
+        public string LdapUserGuidAttr { get; set; } = "objectGUID";
 
         /// <summary>
         /// Gets or sets the attribute name for user names
@@ -70,7 +70,7 @@ namespace PlasticNotifyCenter.Data
         /// <summary>
         /// Gets or sets the attribute name for group GUIDs
         /// </summary>
-        public string LdapGroupGuidAttr { get; set; } = "GUID";
+        public string LdapGroupGuidAttr { get; set; } = "objectGUID";
 
         /// <summary>
         /// Gets or sets the attribute name for group names

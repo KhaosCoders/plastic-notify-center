@@ -14,14 +14,14 @@
         <div class="form-group text-left col-md-8">
             <label for="smtpHost">SMTP Host</label>
             <input type="text" class="form-control" id="smtpHost" aria-describedby="smtpHostHelp"
-                placeholder="Enter the hostname of your mail server" required value="@(Model?.Host ??"")">
+                placeholder="Enter the hostname of your mail server" required value="@(Model?.Host ?? "")">
             <small id="smtpHostHelp" class="form-text text-muted">Most mail servers offer sending mails via SMTP.</small>
             <div id="smtpHostValidator" style="display: none;"></div>
         </div>
         <div class="form-group text-left col-md-4">
             <label for="smtpPort">SMTP Port</label>
             <input type="text" class="form-control" id="smtpPort" aria-describedby="smtpPortHelp"
-                placeholder="Enter the SMTP port of your mail server" value="465" required value="@(Model?.Port.ToString() ?? "")">
+                placeholder="Enter the SMTP port of your mail server" required value="@(Model?.Port.ToString() ?? "465")">
             <small id="smtpPortHelp" class="form-text text-muted">SMTP default ports are <i>25</i> (Non-SSL) and <i>465</i> (SSL).</small>
             <div id="smtpPortValidator" style="display: none;"></div>
         </div>
